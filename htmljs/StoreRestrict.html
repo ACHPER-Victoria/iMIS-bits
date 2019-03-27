@@ -1,0 +1,49 @@
+<!-- Add this to the HEAD of store pages that you want only want to allow
+  purchase by approved users.
+  You'll want to make an iQA Query that looks something like storequery.png
+  Place an encoded mailto: URI on line 26 to auto compose an e-mail for the user
+  to send to you reqesting access.
+
+  It's a bit ghetto because trying to overcome resource loading delays, so
+  multiple events listeners are attempted.
+-->
+<style>
+input[name$="AddToCart"] {
+    display: none;
+    visibility: hidden;
+}
+</style>
+<script type="text/javascript">
+function activateStore() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var buttons = jQuery("[name$='AddToCart']");
+  if (jdata["isAnonymous"]) { buttons.replaceWith( '<a class="TextButton PrimaryButton" href="/achper/signin">Log in</a>'); }
+  else {
+    jQuery.ajax("/api/iqa?QueryName=Store Queries/BOOL-Allowed to acquire VCE resources",
+    {
+      type : "get",
+      contentType: "application/json",
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        if (data["Count"] == 0) {
+          buttons.replaceWith( '<a class="TextButton" href="mailto:internet@internet?subjectetc='+jdata['loggedInPartyId']+'">Access Now</a>');
+        }
+        buttons.css('display', 'inline-block');
+        buttons.css('visibility', 'visible');
+      }
+    });
+  }
+}
+window.addEventListener("load", function() {
+  activateStore();
+  setTimeout(function(){
+        activateStore();
+    }, 1500);
+});
+window.addEventListener("DOMContentLoaded", function() {
+  activateStore();
+  setTimeout(function(){
+        activateStore();
+    }, 1500);
+});
+</script>

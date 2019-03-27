@@ -1,0 +1,150 @@
+<!-- Add this to a HTML iPart in Contacts/ContactLayouts/Staff/Tabs/Groups to
+  add a "Add to group" UI Element tab to Staff Contact display.
+  Can only Add current user to group at the moment.
+  TODO: Figure out how to delete from groups.
+
+  Protip: You should probably add a "Query Menu" iPart to list the groups the
+  current user is a member of. I made one that looks something like groupquery.png
+  One I figure out how to delete, add delete function below and then add
+  href=RemoveUserFromGroup() to a display element in the query.
+-->
+<p>Add User to Group: <input type="text" value="" id="groupnameinput"> <a id="AddGroupButton" class="TextButton" href="#" onclick="addUserToGroup();return false;">Add</a></p>
+<p id="GroupActionStatus">&nbsp;</p>
+<script type="text/javascript">
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) {
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+var ADDTEMPLATE = `{
+      "$type": "Asi.Soa.Membership.DataContracts.GroupMemberData, Asi.Contracts",
+      "MembershipDetails": {
+          "$type": "Asi.Soa.Membership.DataContracts.GroupMemberDetailDataCollection, Asi.Contracts",
+          "$values": [
+              {
+                  "$type": "Asi.Soa.Membership.DataContracts.GroupMemberDetailData, Asi.Contracts",
+                  "Stage": {
+                      "$type": "Asi.Soa.Membership.DataContracts.GroupStageData, Asi.Contracts"
+                  },
+                  "EffectiveDate": "{0}",
+                  "ExpirationDate": "{1}",
+                  "IsActive": true,
+                  "Role": {
+                      "$type": "Asi.Soa.Membership.DataContracts.GroupRoleData, Asi.Contracts",
+                      "RoleId": "29AAE912-660E-4C53-B884-AD9EE27DEE0C",
+                      "Description": "Member",
+                      "Name": "Member"
+                  }
+              }
+          ]
+      },
+      "Group": {
+          "$type": "Asi.Soa.Membership.DataContracts.GroupSummaryData, Asi.Contracts",
+          "GroupId": "{2}",
+      },
+      "Party": {
+          "$type": "Asi.Soa.Membership.DataContracts.PartySummaryData, Asi.Contracts",
+          "PartyId": "{3}",
+      },
+      "JoinDate": "{0}",
+      "IsActive": true
+  }`;
+
+function RemoveUserFromGroup(id, groupid) {
+  var context = JSON.parse(document.getElementById("__ClientContext").value)
+    // Get groupmemberid
+    jQuery.ajax("/api/GroupMember?GroupId=Eq:"+groupid+"&PartyId=Eq:"+id,
+    {
+      type : "get",
+      contentType: "application/json",
+      async: false,
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        var gmid = data["Items"]["$values"][0]["GroupMemberId"]
+        // TODO: then remove ID, if I can figure out how...
+      }
+    });
+}
+
+function isUserInGroup(groupID, iMISid) {
+  var isMember = null;
+  jQuery.ajax("/api/GroupMember?GroupId={0}&PartyId={1}".format(groupID, iMISid),
+  {
+    type : "get",
+    contentType: "application/json",
+    async: false,
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      isMember = data["Count"] > 0;
+    }
+  });
+  return isMember;
+}
+
+function getGroupID(groupname) {
+  var gid = null;
+  jQuery.ajax("/api/GroupSummary?Name={0}".format(groupname),
+  {
+    type : "get",
+    contentType: "application/json",
+    async: false,
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      if (data["Count"] < 1) { return null; }
+      gid = data["Items"]["$values"][0]["GroupId"];
+    }
+  });
+  return gid;
+}
+
+function addUserToGroup() {
+  // get id
+  var imisid = (new URLSearchParams(window.location.search)).get("ID")
+  var groupname = jQuery('#groupnameinput').val()
+  var statusbox = jQuery('#GroupActionStatus')
+  var addbutton = jQuery('#AddGroupButton')
+  addbutton.attr("disabled", "disabled");
+  // update status window
+  statusbox.text("Adding...")
+  // get GroupId
+  var groupid = getGroupID(groupname);
+  statusbox.text("Still adding...")
+  if (groupid) {
+    // Check if User in group
+    var isMember = isUserInGroup(groupid, imisid);
+    if (isMember) {
+      statusbox.text("User already in Group ({0}).".format(groupname));
+      addbutton.removeAttr("disabled");
+      return;
+    }
+    var d = new Date();
+    var df = new Date();
+    df.setFullYear(df.getFullYear() + 3);
+    jQuery.ajax("/api/GroupMember",
+    {
+      type : "post",
+      contentType: "application/json",
+      async: false,
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      data: ADDTEMPLATE.format(d.toJSON(), df.toJSON(), groupid, imisid),
+      success: function(data) {
+        statusbox.text("Successfully added... Reloading.");
+        location.reload();
+      },
+      error: function(request, status, error) {
+        statusbox.text("Could not add to group. Please ask Lee for help. Give him this please: ({0})".format(request.responseText))
+      }
+    });
+  }
+  else {
+    statusbox.text("Could not find group. Please check GroupName in Community - Groups.");
+    addbutton.removeAttr("disabled");
+  }
+}
+</script>

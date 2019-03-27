@@ -1,0 +1,25 @@
+<!-- Add this to a HTML iPart on Staff_Event_Display to display "Additional information" section as a subtitle  -->
+<script>
+  function insertSpeaker(value){
+    if ("AdditionalDescription" in value && value["AdditionalDescription"]){
+      var id = value["EventFunctionId"];
+      jQuery('div[data-programitemcontainer-id="'+id+'"] .Description').prepend('<span class="Presenter">'+value["AdditionalDescription"]+'<br></span>');
+    }
+  }
+  function findAndInsert(){
+    var eventid = (new URLSearchParams(window.location.search)).get("EventKey")
+    jQuery.ajax("/api/Event/"+eventid,
+    {
+      type : "get",
+      contentType: "application/json",
+      async: true,
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        if ("Functions" in data){
+          if ("$values" in data["Functions"]) { data["Functions"]["$values"].forEach(insertSpeaker); }
+        }
+      }
+    });
+  }
+  findAndInsert();
+</script>
