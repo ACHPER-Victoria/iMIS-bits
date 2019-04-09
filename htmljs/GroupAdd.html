@@ -57,7 +57,6 @@ var ADDTEMPLATE = `{
   }`;
 
 function RemoveUserFromGroup(id, groupid) {
-  var context = JSON.parse(document.getElementById("__ClientContext").value)
     // Get groupmemberid
     jQuery.ajax("/api/GroupMember?GroupId=Eq:"+groupid+"&PartyId=Eq:"+id,
     {
@@ -68,6 +67,42 @@ function RemoveUserFromGroup(id, groupid) {
       success: function(data) {
         var gmid = data["Items"]["$values"][0]["GroupMemberId"]
         // TODO: then remove ID, if I can figure out how...
+      }
+    });
+}
+
+function RemoveGroupMember(groupmemberid) {
+  var statusbox = jQuery('#GroupActionStatus')
+  statusbox.text("Deleting...");
+    // Get groupmemberdetail ID
+    jQuery.ajax("/api/GroupMemberDetail?GroupMemberKey="+groupmemberid,
+    {
+      type : "get",
+      contentType: "application/json",
+      async: true,
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        if (data["Count"] < 1) {
+          statusbox.text("Could not find groupmember. Did you already delete? Reload the page to refresh the table.")
+          return;
+        }
+        var gmdid = data["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
+        // Delete
+        statusbox.text("Deleting... Please wait...");
+        jQuery.ajax("/api/GroupMemberDetail/"+gmdid,
+        {
+          type : "delete",
+          contentType: "application/json",
+          async: true,
+          headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+          success: function(ndata) {
+            statusbox.text("Successfully Deleted. Reload the page to refresh the table.");
+            //location.reload();
+          }
+        });
+      },
+      error: function(request, status, error) {
+        statusbox.text("Could not delete. Please ask Lee for help. Give him this please: ({0})".format(request.responseText))
       }
     });
 }
@@ -134,8 +169,8 @@ function addUserToGroup() {
       headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
       data: ADDTEMPLATE.format(d.toJSON(), df.toJSON(), groupid, imisid),
       success: function(data) {
-        statusbox.text("Successfully added... Reloading.");
-        location.reload();
+        statusbox.text("Successfully added... Reload the page to update the table.");
+        //location.reload();
       },
       error: function(request, status, error) {
         statusbox.text("Could not add to group. Please ask Lee for help. Give him this please: ({0})".format(request.responseText))

@@ -24,6 +24,26 @@
   window.addEventListener("DOMContentLoaded", function() {
     setTimeout(function(){
           findAndInsert();
-      }, 100);
+      }, 500);
   });
+</script>
+
+<!-- Add this to the HEAD of the Event_display to hide price of Program Items
+  if price is 0 -->
+<script>
+function hidePrice(){
+  var prices = jQuery("[id$='PriceRow']");
+  prices.each(function(index, element) {
+    var el = jQuery(element);
+    if (el.find("[id$='PriceData']").text() == "0.00") {
+      el.css('display', 'none');
+      el.css('visibility', 'hidden');
+    }
+  });
+}
+window.addEventListener("DOMContentLoaded", function() {
+  setTimeout(function(){
+        hidePrice();
+    }, 500);
+});
 </script>
