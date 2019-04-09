@@ -121,6 +121,23 @@ def giveAccess(imisid):
         return False
     else: return True
 
+def enableProgramItems(eventid, enable=True):
+    r = requests.get("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS)
+    if r.status_code == 200:
+        # Modify functions
+        event = r.json()
+        for func in event["Functions"]["$values"]:
+            for attr in func["AdditionalAttributes"]["$values"]:
+                if attr["Name"] == "WebEnabled": attr["Value"]["$value"] = enable
+        #upload modifications
+        r = requests.put("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS, json=event)
+        print r.status_code
+        if r.status_code != 200 and r.status_code != 201:
+            print r.text
+    else:
+        print r.status_code, r.text
+        return False
+
 def isUserInGroup(userid, groupname):
     groupID = lookupGroup(groupname)
     r = requests.get("%s/api/GroupMember" % API_URL, headers=HEADERS, params={'GroupId': '%s' % groupID, "PartyId": userid, "limit":1})
@@ -133,13 +150,6 @@ def resolveAOUser(aoid):
     if len(r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"]) > 1:
         TOO_MANY_IDs
     return r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
-
-def hideProgramItems(code, hide=True):
-    r = requests.get("%s/api/Event" % API_URL, headers=HEADERS, params={'EventId': '%s' % code, "limit":1})
-    if r.status_code != 200:
-        return False
-    pass # API is lacking, and annoying.
-
 
 def addToGroup(user, groupname):
     groupID = lookupGroup(groupname)
