@@ -79,6 +79,37 @@ ADDGROUP_BODY = """{
     "IsActive": true
 }"""
 
+ALLIANCE_BODY = """{
+    "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
+    "EntityTypeName": "ACH_MarketingGroups",
+    "PrimaryParentEntityTypeName": "Party",
+    "PrimaryParentIdentity": {
+        "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+        "EntityTypeName": "Party",
+        "IdentityElements": {
+            "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+            "$values": [
+                "{0}"
+            ]
+        }
+    },
+    "Properties": {
+    "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
+    "$values": [
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "ID",
+                "Value": "{0}"
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "GroupName",
+                "Value": "{1}"
+            }
+        ]
+    }
+}"""
+
 GROUP_MAPPING = {}
 MAPPING = {}
 
@@ -158,6 +189,27 @@ def addToGroup(user, groupname):
     r = requests.post("%s/api/GroupMember" % API_URL, headers=HEADERS, data=ADDGROUP_BODY % (groupID, user))
     if r.status_code != 201:
         print "Error Adding (%s) to (%s) %s" % (user, groupname, groupID)
+        print r.text
+        return False
+    else:
+        return True
+
+def allianceList(alliancename):
+    r = requests.get("%s/api/ACH_MarketingGroups?GroupName=%s" % (API_URL, alliancename), headers=HEADERS)
+    if r.status_code != 200:
+        print "Error getting list" % (user, groupname, groupID)
+        print r.text
+        return False
+    else:
+        users = []
+        for item in r.json()["Items"]["$values"]:
+            users.append(item["PrimaryParentIdentity"]["IdentityElements"]["$values"][0])
+        return users
+
+def addToAlliance(userid, alliancename):
+    r = requests.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY.format(userid, alliancename))
+    if r.status_code != 201:
+        print "Error Adding (%s) to (%s)" % (userid, alliancename)
         print r.text
         return False
     else:
