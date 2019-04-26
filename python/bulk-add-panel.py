@@ -1,4 +1,4 @@
-from iMISutils import enableProgramItems
+from iMISutils import addToAlliance, allianceList, resolveAOUser
 from sys import argv, exit
 import unicodecsv
 
@@ -7,7 +7,10 @@ if len(argv) != 3:
     exit(1)
 
 ALLIANCE_USERS = allianceList(argv[2])
+print ALLIANCE_USERS
+
 ALLIANCE = argv[2]
+MISSING = {}
 
 f = open(argv[1], "rb")
 fo = open("missing-all2.csv", "wb")

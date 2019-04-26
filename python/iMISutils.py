@@ -89,7 +89,7 @@ ALLIANCE_BODY = """{
         "IdentityElements": {
             "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
             "$values": [
-                "{0}"
+                "%s"
             ]
         }
     },
@@ -99,12 +99,12 @@ ALLIANCE_BODY = """{
             {
                 "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
                 "Name": "ID",
-                "Value": "{0}"
+                "Value": "%s"
             },
             {
                 "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
                 "Name": "GroupName",
-                "Value": "{1}"
+                "Value": "%s"
             }
         ]
     }
@@ -195,7 +195,7 @@ def addToGroup(user, groupname):
         return True
 
 def allianceList(alliancename):
-    r = requests.get("%s/api/ACH_MarketingGroups?GroupName=%s" % (API_URL, alliancename), headers=HEADERS)
+    r = requests.get("%s/api/ACH_MarketingGroups" % API_URL, params={'GroupName': alliancename, "limit": 500}, headers=HEADERS)
     if r.status_code != 200:
         print "Error getting list" % (user, groupname, groupID)
         print r.text
@@ -207,7 +207,8 @@ def allianceList(alliancename):
         return users
 
 def addToAlliance(userid, alliancename):
-    r = requests.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY.format(userid, alliancename))
+
+    r = requests.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY % (userid, userid, alliancename))
     if r.status_code != 201:
         print "Error Adding (%s) to (%s)" % (userid, alliancename)
         print r.text
