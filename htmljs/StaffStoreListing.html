@@ -1,0 +1,17 @@
+<style>
+div[id$="AddToCartDiv"] {
+    margin-bottom: -30px
+}
+span[id$="_ProductDescription"] {
+    display: none;
+    visibility: hidden;
+}
+</style>
+<script type="text/javascript">
+  window.addEventListener("DOMContentLoaded", function() {
+    jQuery("[id$='_ProductDescription']").next().remove();
+    setTimeout(function(){
+          //
+      }, 1500);
+  });
+</script>
