@@ -182,6 +182,14 @@ def resolveAOUser(aoid):
         TOO_MANY_IDs
     return r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
 
+def getUserIDByEmail(email):
+    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'startsWith:%s' % aoid, "limit":2})
+    if r.json()["Count"] < 1:
+        return 0
+    if r.json()["Count"] > 1:
+        return None
+    return r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
+
 def addToGroup(user, groupname):
     groupID = lookupGroup(groupname)
     if isUserInGroup(user, groupname):
@@ -207,7 +215,6 @@ def allianceList(alliancename):
         return users
 
 def addToAlliance(userid, alliancename):
-
     r = requests.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY % (userid, userid, alliancename))
     if r.status_code != 201:
         print "Error Adding (%s) to (%s)" % (userid, alliancename)
