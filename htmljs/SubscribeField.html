@@ -1,0 +1,21 @@
+<!-- Add this to the HEAD of the extra data tab on the subscribe wizard. -->
+<script type="text/javascript">
+function hideLink() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var linktext = jQuery("h3#SubAcctLink");
+  var buttons = jQuery("[name$='btnNext_3']");
+  if (!jdata["isAnonymous"]) {
+    linktext.css('display', 'none');
+    linktext.css('visibility', 'hidden');
+    buttons.css('display', 'none');
+    buttons.css('visibility', 'hidden');
+  }
+}
+window.addEventListener("DOMContentLoaded", hideLink);
+</script>
+
+<!-- Add this to the content page -->
+<h3 id="SubAcctLink">Don't have an account? <a href="[@]public/news/subscribe.aspx" class="">Click here to continue</a></h3>
+
+<!-- Or this to the other page -->
+<h3 id="SubAcctLink">Already have an account? <a href="[@]public/news/subscribe-login.aspx" class="">Click here to continue</a></h3>
