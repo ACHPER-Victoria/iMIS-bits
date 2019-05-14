@@ -183,7 +183,7 @@ def resolveAOUser(aoid):
     return r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
 
 def getUserIDByEmail(email):
-    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'startsWith:%s' % aoid, "limit":2})
+    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'eq:%s' % email, "limit":2})
     if r.json()["Count"] < 1:
         return 0
     if r.json()["Count"] > 1:
