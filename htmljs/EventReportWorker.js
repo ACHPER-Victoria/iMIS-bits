@@ -245,7 +245,7 @@ function startProcessingEvent(data) {
   // iterate over registration options
   data["RegistrationOptions"]["$values"].forEach(function(item) {
     regoptions[item["EventFunctionId"]] = item["Name"]
-    dorequest("/api/vCsRegFunctions?ProductCode={0}".format(item["EventFunctionId"]),
+    dorequest("/api/vCsRegFunctions?ProductCode={0}&limit=300".format(item["EventFunctionId"]),
       function(regfuncdata) {
         regfuncdata["Items"]["$values"].forEach(function(rfi) {
           var rfperson = {};
