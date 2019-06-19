@@ -34,3 +34,7 @@ for row in reader:
         print "Adding (%s,%s)..." % (id, imisid)
         if not addToAlliance(imisid, ALLIANCE):
             fe.write("%s,%s,%s\n" % (id, imisid, ALLIANCE))
+
+writer = unicodecsv.writer(fo, encoding="utf-8")
+for i in sorted(MISSING):
+    writer.writerow(MISSING[i])

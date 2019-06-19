@@ -1,0 +1,21 @@
+<span style="font-size: 20px;"><strong>Public URL:</strong></span> <span id="publiceventlink" style="font-size: 20px;"></span>
+<p><a id="eventexportlink" class="TextButton">Export Event Report</a></p>
+<script type="text/javascript">
+  if (!String.prototype.format) {
+    String.prototype.format = function() {
+      var args = arguments;
+      return this.replace(/{(\d+)}/g, function(match, number) {
+        return typeof args[number] != 'undefined'
+          ? args[number]
+          : match
+        ;
+      });
+    };
+  }
+function placeURL(){
+  var eventid = (new URLSearchParams(window.location.search)).get("EventKey");
+  jQuery('#publiceventlink').html('<a href="https://achper.vic.edu.au/ACHPERVic/Event_display.aspx?EventKey={0}">https://achper.vic.edu.au/ACHPERVic/Event_display.aspx?EventKey={0}</a>'.format(eventid));
+  jQuery('a#eventexportlink').attr("href", "/ACHPERVic/Dashboards/Event-Report.aspx?EventKey={0}".format(eventid));
+}
+window.addEventListener("DOMContentLoaded", placeURL);
+</script>

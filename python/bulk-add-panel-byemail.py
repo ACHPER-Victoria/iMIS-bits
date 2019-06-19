@@ -1,4 +1,4 @@
-from iMISutils import addToAlliance, allianceList, resolveAOUser
+from iMISutils import addToAlliance, allianceList, getUserIDByEmail
 from sys import argv, exit
 import unicodecsv
 
@@ -10,14 +10,14 @@ ALLIANCE_USERS = allianceList(argv[2])
 print ALLIANCE_USERS
 
 ALLIANCE = argv[2]
-MISSING = {}
+MISSING = []
 HEADERS = {}
 
 
 f = open(argv[1], "rb")
 fo = open("missing-all2.csv", "wb")
 fe = open("errors.txt", "wb")
-reader = unicodecsv.reader(f, encoding="utf-8", delimiter="\t")
+reader = unicodecsv.reader(f, encoding="utf-8")
 header = True
 for row in reader:
     if header:
@@ -28,13 +28,16 @@ for row in reader:
     email = row[HEADERS["email"]].strip()
     # get iMIS ID
     print email,
-    imisid = resolveAOUser(id)
+    imisid = getUserIDByEmail(email)
     if imisid is 0 or imisid is None:
-        if email not in MISSING:
-            MISSING[email] = row
+        MISSING.append(row)
         continue
 
     if imisid not in ALLIANCE_USERS:
         print "Adding (%s,%s)..." % (email, imisid)
         if not addToAlliance(imisid, ALLIANCE):
             fe.write("%s,%s,%s\n" % (email, imisid, ALLIANCE))
+
+writer = unicodecsv.writer(fo, encoding="utf-8")
+for line in MISSING:
+    writer.writerow(line)

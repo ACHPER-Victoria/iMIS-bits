@@ -11,7 +11,7 @@ from os.path import expanduser, join
 home = expanduser("~")
 
 SETTINGS = json.load(open(join(home, ".iMIS.json"), "rb"))
-
+SITE_NAME = SETTINGS["SITE_NAME"]
 API_URL = SETTINGS["API_URL"]
 h = {'content-type': "application/x-www-form-urlencoded"}
 formdata = {"Username" : SETTINGS["username"], "Password": SETTINGS["password"], "Grant_type":"password"}
@@ -110,6 +110,40 @@ ALLIANCE_BODY = """{
     }
 }"""
 
+ABTEST_BODY = """{
+    "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
+    "EntityTypeName": "ABTest",
+    "PrimaryParentEntityTypeName": "Party",
+    "PrimaryParentIdentity": {
+        "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+        "EntityTypeName": "Party",
+        "IdentityElements": {
+            "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+            "$values": [
+                "%s"
+            ]
+        }
+    },
+    "Properties": {
+    "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
+    "$values": [
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "ID",
+                "Value": "%s"
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "AB1",
+                "Value": {
+                    "$type": "System.Boolean",
+                    "$value": %s
+                }
+            }
+        ]
+    }
+}"""
+
 GROUP_MAPPING = {}
 MAPPING = {}
 
@@ -183,7 +217,7 @@ def resolveAOUser(aoid):
     return r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
 
 def getUserIDByEmail(email):
-    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'startsWith:%s' % aoid, "limit":2})
+    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'eq:%s' % email, "limit":2})
     if r.json()["Count"] < 1:
         return 0
     if r.json()["Count"] > 1:
@@ -222,3 +256,57 @@ def addToAlliance(userid, alliancename):
         return False
     else:
         return True
+
+def getCommunicationPreferences():
+    r = requests.get("%s/api/CommunicationType" % API_URL, headers=HEADERS)
+    if r.status_code != 200:
+        print "Error"
+        print r.text
+        return False
+    else:
+        return map(lambda x: x["ReasonCode"], r.json()["Items"]["$values"])
+
+def getCommPrefIDs(commpref):
+    r = requests.get("%s/api/CommunicationType" % (API_URL), headers=HEADERS, params={'ReasonCode': commpref})
+    if r.status_code != 200:
+        print "Error getting comm pref (%s)" % commpref
+        print r.text
+        return False
+    else:
+        if r.json()["Count"] != 1:
+            print "Not enough/Too many results for (%s) %s" % (commpref, r.json()["Count"])
+        typeid = r.json()["Items"]["$values"][0]["CommunicationTypeId"]
+        print "Fetching all (%s) - %s" % (commpref, typeid)
+        IDs = []
+        r = requests.get("%s/api/iqa" % (API_URL), headers=HEADERS,
+            params=(('limit', 500),
+                ('QueryName', "$/%s/Contact Queries/CommunicationPrefs" % SITE_NAME),
+                ('parameter',"eq:"+typeid)))
+        if r.status_code != 200:
+            print "ERROR: "+ r.text
+            return
+        i = 0
+        while r.json()["Count"] > 0:
+            i += 500
+            for x in r.json()["Items"]["$values"]:
+                IDs.append(filter(lambda z: z["Name"] == "ID", x["Properties"]["$values"])[0]["Value"])
+            r = requests.get("%s/api/iqa" % (API_URL), headers=HEADERS,
+                params=(('limit', 500), ('offset', i),
+                    ('QueryName', "$/%s/Contact Queries/CommunicationPrefs" % SITE_NAME),
+                    ('parameter',"eq:"+typeid)))
+            if r.status_code != 200:
+                print "ERROR: "+ r.text
+                return
+        return IDs
+
+def ABset(uid, value):
+    r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
+    if r.status_code == 404:
+        r = requests.post("%s/api/ABTest" % (API_URL), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
+        if r.status_code != 201:
+            print "Error on post: " + r.text
+            return False
+    elif r.status_code != 201:
+        print "Error: " + r.text
+        return False
+    return True

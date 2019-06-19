@@ -1,5 +1,3 @@
-// First Name, Last Name, Org, Member, Sector, Region, Special Diet, How did you hear about, Purchase Order Numb
-// Amount, Session A, Session B, Session C, Invoice Number, email, Reg status, Registration Option
 if (!String.prototype.format) {
   String.prototype.format = function() {
     var args = arguments;
@@ -11,37 +9,74 @@ if (!String.prototype.format) {
     });
   };
 }
+var myWorker = new Worker('/common/Uploaded%20Files/Code/EventReportWorker-36.js');
 
-var eventid = (new URLSearchParams(window.location.search)).get("ID")
+var eventid = (new URLSearchParams(window.location.search)).get("EventKey")
 
-// Get Event Details
-jQuery.ajax("/api/Event/{0}".format(eventid),
-{
-  type : "get",
-  contentType: "application/json",
-  async: false,
-  headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
-  success: function(data) {
-    // collate Conflict Code data
-    var conflictcodes = [];
-    var conflicttable = {};
-    var regoptions = {};
-    data["Functions"]["$values"].foreach(function(item) {
-      var cc = item["ConflictCodes"]; // check if contains digit, ignore if so
-      if (!(/\d/.test(cc))) {
-        if (!conflictcodes.includes(cc)) {
-          conflictodes.append(cc);
-        }
-        if (item["EventFunctionCode"] in conflicttable) {}
-        else {conflicttable[item["EventFunctionCode"]] = cc; }
-      }
-    });
-    data["RegistrationOptions"]["$values"].foreach(function(item) {
-      regoptions[item["EventFunctionId"]] = item["Name"]
-    });
+function exportlog(s) {
+  var ta = jQuery('textarea#exportlog');
+  ta.val(ta.val() + s + "\n")
+}
+function updateProgress(i) {
+  jQuery('span#exportcount').text(i);
+}
+
+function saveFile(data) {
+  var csvData = new Blob(["\ufeff"+data], {type: 'text/csv;charset=utf-8;'});
+  var exportFilename = "{0}-{1}.csv".format(eventid, (new Date()).toISOString().slice(0,10))
+  exportlog("Downloading now...");
+  //IE11 & Edge
+  if (navigator.msSaveBlob) {
+      navigator.msSaveBlob(csvData, exportFilename);
+  } else {
+      //In FF link must be added to DOM to be clicked
+      var link = document.createElement('a');
+      link.href = window.URL.createObjectURL(csvData);
+      link.setAttribute('download', exportFilename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   }
-});
+}
 
-// iterate over registration options
+function runReport() {
+  // set expected count
+  jQuery.ajax("/api/CsEvent/{0}".format(eventid),
+  {
+    type : "get",
+    contentType: "application/json",
+    async: true,
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      data["Properties"]["$values"].forEach(function(pi) {
+        if (pi["Name"] == "TotalRegistrants") {
+          jQuery('span#exporttotal').text(pi["Value"]["$value"]);
+        }
+      });
+    }
+  });
+  workerMaker('csvFormat', [eventid, document.getElementById("__RequestVerificationToken").value]);
+}
 
-// list all regfuction entries for registration option
+const workerMaker = (type, arg) => {
+  // check if a worker has been imported
+  if (window.Worker) {
+    myWorker.postMessage({type, arg});
+  }
+}
+
+myWorker.onmessage = function(e) {
+  //console.log('Message received from worker');
+  const response = e.data;
+  const data = response.data;
+  const type = response.type;
+  if (type === 'csvFormat') {
+    saveFile(data);
+  } else if (type === 'exportlog') {
+    exportlog(data);
+  } else if (type === 'exportprogress') {
+    updateProgress(data);
+  } else {
+    console.error('An Invalid type has been passed in');
+  }
+}
