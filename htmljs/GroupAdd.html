@@ -10,7 +10,12 @@
 
   TODO: Make this async so status messages actually display.
 -->
-<p>Add User to Group: <input type="text" value="" id="groupnameinput"> <a id="AddGroupButton" class="TextButton" href="#" onclick="addUserToGroup();return false;">Add</a></p>
+<style>.addtopalign { vertical-align: top; }</style>
+<p><span class="addtopalign">Add User to Group: </span><input class="addtopalign" type="text" value="" id="groupnameinput">
+  <select id="GroupPullDown" size="15" multiple>
+    <option value="">(None)</option>
+  </select>
+<a id="AddGroupButton" class="TextButton addtopalign" href="#" onclick="addUserToGroup();return false;">Add</a></p>
 <p id="GroupActionStatus">&nbsp;</p>
 <script type="text/javascript">
 if (!String.prototype.format) {
@@ -142,46 +147,74 @@ function getGroupID(groupname) {
 
 function addUserToGroup() {
   // get id
-  var imisid = (new URLSearchParams(window.location.search)).get("ID")
-  var groupname = jQuery('#groupnameinput').val()
-  var statusbox = jQuery('#GroupActionStatus')
-  var addbutton = jQuery('#AddGroupButton')
+  var imisid = (new URLSearchParams(window.location.search)).get("ID");
+  var groupnamebox = jQuery('#groupnameinput').val();
+  var statusbox = jQuery('#GroupActionStatus');
+  var addbutton = jQuery('#AddGroupButton');
+  var groups = jQuery('#GroupPullDown').val();
+
   addbutton.attr("disabled", "disabled");
   // update status window
-  statusbox.text("Adding...")
-  // get GroupId
-  var groupid = getGroupID(groupname);
-  statusbox.text("Still adding...")
-  if (groupid) {
-    // Check if User in group
-    var isMember = isUserInGroup(groupid, imisid);
-    if (isMember) {
-      statusbox.text("User already in Group ({0}).".format(groupname));
-      addbutton.removeAttr("disabled");
-      return;
+  statusbox.text("Adding...<br>")
+  var groupkey = null;
+  if (groupnamebox) {
+    groupkey = getGroupID(groupnamebox);
+    if (!groupkey) {
+      statusbox.append("Could not find group ({0}). Please check GroupName in Community - Groups.".format(groupnamebox));
     }
-    var d = new Date();
-    var df = new Date();
-    df.setFullYear(df.getFullYear() + 3);
-    jQuery.ajax("/api/GroupMember",
-    {
-      type : "post",
-      contentType: "application/json",
-      async: false,
-      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
-      data: ADDTEMPLATE.format(d.toJSON(), df.toJSON(), groupid, imisid),
-      success: function(data) {
-        statusbox.text("Successfully added... Reload the page to update the table.");
-        //location.reload();
-      },
-      error: function(request, status, error) {
-        statusbox.text("Could not add to group. Please ask Lee for help. Give him this please: ({0})".format(request.responseText))
+  }
+  // get GroupId
+  groups.push(groupkey);
+  groups.forEach(function(item){
+    if (item) {
+      // convert key to name
+      var groupname = null;
+      if (item == groupkey) { groupname = groupnamebox; }
+      else { groupname = jQuery('select[id=GroupPullDown] option[value="{0}"]'.format(item)).text(); }
+      // Check if User in group
+      var isMember = isUserInGroup(item, imisid);
+      if (isMember) {
+        statusbox.append("User already in Group ({0}).<br>".format(groupname));
+        addbutton.removeAttr("disabled");
+        return;
       }
+      var d = new Date();
+      var df = new Date();
+      df.setFullYear(df.getFullYear() + 3);
+      jQuery.ajax("/api/GroupMember",
+      {
+        type : "post",
+        contentType: "application/json",
+        async: false,
+        headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+        data: ADDTEMPLATE.format(d.toJSON(), df.toJSON(), item, imisid),
+        success: function(data) {
+          statusbox.append("Successfully added to ({0})... Reload the page to update the table.<br>".format(groupname));
+          //location.reload();
+        },
+        error: function(request, status, error) {
+          statusbox.append("Could not add to group ({0}). Please ask Lee for help. Give him this please: ({1})<br>".format(request.responseText, groupname))
+        }
+      });
+    }
+  });
+  addbutton.removeAttr("disabled");
+}
+
+jQuery.ajax("/api/iqa?QueryName=$/ACHPERVIC/Store Queries/Product Access/Groups Pulldown",
+{
+  type : "get",
+  contentType: "application/json",
+  headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+  success: function(data) {
+    var selectfield = jQuery("#GroupPullDown");
+    jQuery('#GroupPullDown option:gt(0)').remove(); // remove all options, but not the first
+    data["Items"]["$values"].forEach(function(ele) {
+      var i = ele["Properties"]["$values"][1]["Value"]
+      var k = ele["Properties"]["$values"][2]["Value"]
+      selectfield.append(jQuery("<option></option>")
+         .attr("value", k).text(i));
     });
   }
-  else {
-    statusbox.text("Could not find group. Please check GroupName in Community - Groups.");
-    addbutton.removeAttr("disabled");
-  }
-}
+});
 </script>
