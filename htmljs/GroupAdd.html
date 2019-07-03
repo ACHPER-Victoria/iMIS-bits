@@ -156,20 +156,26 @@ function addUserToGroup() {
   addbutton.attr("disabled", "disabled");
   // update status window
   statusbox.text("Adding...<br>")
-  var groupkey = null;
+  var groupnames = {}
   if (groupnamebox) {
-    groupkey = getGroupID(groupnamebox);
-    if (!groupkey) {
-      statusbox.append("Could not find group ({0}). Please check GroupName in Community - Groups.".format(groupnamebox));
-    }
+    var gitems = groupnamebox.split(",")
+    gitems.forEach(function(gi) {
+      if (gi) {
+        var groupkey = getGroupID(gi); // get GroupId
+        if (!groupkey) {
+          statusbox.append("Could not find group ({0}). Please check GroupName in Community - Groups.".format(gi));
+        } else {
+          groupnames[groupkey] = gi
+          groups.push(groupkey);
+        }
+      }
+    });
   }
-  // get GroupId
-  groups.push(groupkey);
   groups.forEach(function(item){
     if (item) {
       // convert key to name
       var groupname = null;
-      if (item == groupkey) { groupname = groupnamebox; }
+      if (item in groupnames) { groupname = groupnames[item]; }
       else { groupname = jQuery('select[id=GroupPullDown] option[value="{0}"]'.format(item)).text(); }
       // Check if User in group
       var isMember = isUserInGroup(item, imisid);
