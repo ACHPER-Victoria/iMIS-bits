@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# ignore temp js files for iMIS upload
+htmljs/*.js.txt
+htmljs/PDF/*.js.txt
