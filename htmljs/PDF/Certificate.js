@@ -9,7 +9,7 @@ if (!String.prototype.format) {
     });
   };
 }
-var myWorker = new Worker('/common/Uploaded%20Files/Code/PDF/CertificateWorker-25.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/PDF/CertificateWorker-26.js');
 
 function certlog(s) {
   var ta = jQuery('textarea#certlog');

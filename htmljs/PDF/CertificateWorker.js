@@ -194,14 +194,19 @@ function startProcess(eventid, userid, token) {
   }
   var ceu = null;
   dorequest("/api/iqa?QueryName=$/ACHPERVIC/Events/Event Certificate CEU&parameter={0}".format(orderid), function(orderdata) {
-    if (orderdata["TotalCount"] != 1) {
-      certlog("Invalid data(tc).");
-    }
-    else {
-      orderdata["Items"]["$values"][0]["Properties"]["$values"].forEach(function(odata) {
-        if (odata["Name"] == "CEU_AWARDED") {ceu = odata["Value"]["$value"]; }
+    // hunt for CEU row
+    var found = false;
+    var eject = false;
+    orderdata["Items"]["$values"].forEach(function(oidata){
+      if (eject) {return;}
+      oidata["Properties"]["$values"].forEach(function(odata) {
+        if (eject) {return;}
+        if ((odata["Name"] == "CEU_AWARDED") && (odata["Value"]["$value"] > 0.0)) {
+          if (found) { certlog("Data error (mc)."); ceu = null; eject = true; }
+          else { ceu = odata["Value"]["$value"]; }
+        }
       });
-    }
+    })
     if (ceu == null) {
       certlog("No data(ce).");
     }
