@@ -47,7 +47,9 @@ function runCert() {
   jQuery('span#certtotal').text("6");
   jQuery('span#progress').text("0");
   var eventid = (new URLSearchParams(window.location.search)).get("EventKey")
-  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"]
+  var userid = (new URLSearchParams(window.location.search)).get("UID")
+  if (userid == null)
+    userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"]
   if (!eventid || !userid) {
     certlog("Invalid event data.");
     return;
