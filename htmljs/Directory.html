@@ -1,0 +1,10 @@
+<!-- Modify Directory page so that Recent Contacts iPart items open up in popup -->
+<script type="text/javascript">
+  window.addEventListener("DOMContentLoaded", function() {
+    jQuery('#ste_container_ciRecentcontacts a[href]')
+      .each(function(){
+        // ShowDialog_NoReturnValue
+        this.href = "javascript:ShowDialog_NoReturnValue('"+this.href.split("&")[0]+"', null, '90%25', '90%25', 'Contact', null, 'E', null, false, false, null, null);";
+      });
+  });
+</script>

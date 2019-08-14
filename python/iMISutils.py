@@ -6,7 +6,8 @@
 
 # TODO: Perhaps add some timeout retrying. I've had a few timeouts on
 #   longer scipts which is annoying
-import re, time, requests, json
+import re, requests, json
+from time import sleep
 from os.path import expanduser, join
 home = expanduser("~")
 
@@ -300,7 +301,13 @@ def getCommPrefIDs(commpref):
         return IDs
 
 def ABset(uid, value):
-    r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
+    try:
+        r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
+    except requests.exceptions.ConnectionError:
+        print "Timeout..."
+        sleep(2)
+        print "Retrying"
+        r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
     if r.status_code == 404:
         r = requests.post("%s/api/ABTest" % (API_URL), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
         if r.status_code != 201:
