@@ -15,16 +15,17 @@ MISSING = {}
 f = open(argv[1], "rb")
 fo = open("missing-all2.csv", "wb")
 fe = open("errors.txt", "wb")
-reader = unicodecsv.reader(f, encoding="utf-8", delimiter="\t")
+reader = unicodecsv.reader(f, encoding="utf-8")
 header = True
 for row in reader:
     if header:
         header = False
         continue
-    id = row[0]
+    imisid = row[0].strip()
+    id = imisid
     # get iMIS ID
-    print id,
-    imisid = resolveAOUser(id)
+    #print id,
+    #imisid = resolveAOUser(id)
     if imisid is None:
         if id not in MISSING:
             MISSING[id] = row
