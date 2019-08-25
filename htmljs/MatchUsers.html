@@ -1,0 +1,18 @@
+<label for="csvInput">Select CSV file with records:</label>
+<input type="file" id="csvInput" name="csvInput" accept=".csv">
+<select id="alliance" name="alliance">
+  <option value="_"></option>
+</select>
+<p>Status: <span id="csvStatus"></span><p>
+<p>Processing: <span id="exportcount"></span>/<span id="exporttotal"></span></p>
+<p>Messages</p>
+<textarea id="exportlog" rows="25" cols="100" style="width: 40em;"></textarea>
+<script type="text/javascript">
+// First Name, Last Name, Org, Member, Sector, Region, Special Diet, How did you hear about, Purchase Order Numb
+// Amount, Session A, Session B, Session C, Invoice Number, email, Reg status, Registration Option
+window.addEventListener("DOMContentLoaded", runReport);
+</script>
+
+Select CSV
+Select match headers: First Name, Last Name, e-mail address, phone number
+Match will only be considered if all the populated fields match. Don't match fields if you want the filter to be more lenient.

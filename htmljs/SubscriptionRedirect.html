@@ -1,0 +1,22 @@
+<!-- Redirect if subscription found -->
+<script type="text/javascript">
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (userid) {
+    jQuery.ajax("/api/Party/"+userid,
+    {
+      type : "get",
+      contentType: "application/json",
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        if (data["CommunicationTypePreferences"]) {
+          data["CommunicationTypePreferences"]["$values"].forEach(function(di) {
+            if (di["CommunicationTypeId"] == "34df42a6-fc80-4032-92f1-262120c1ced0" && di["OptInFlag"] === true) {
+                // redirect here
+                window.location.replace(window.location.href.replace("-visitor", ""));
+            }
+          });
+        }
+      }
+    });
+  }
+</script>
