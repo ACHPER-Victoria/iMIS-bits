@@ -1,15 +1,5 @@
-<!-- Modifylinks if subscription found -->
+<!-- Redirect if subscription found -->
 <script type="text/javascript">
-function modifyLinks() {
-  // https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx
-  jQuery(".TOTW-content a").attr('href', function(i, val) {
-    if (val.startsWith("http://bit.ly") || val.startsWith("https://bit.ly")) {
-      this.target = "";
-      return "https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx?return=" + encodeURIComponent(window.location);
-    }
-  });
-}
-//window.location.replace(window.location.href.replace("-visitor", ""));
 function checkSubscription() {
   var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
   if (userid) {
@@ -23,15 +13,29 @@ function checkSubscription() {
         if (data["CommunicationTypePreferences"]) {
           data["CommunicationTypePreferences"]["$values"].forEach(function(di) {
             if (di["CommunicationTypeId"] == "34df42a6-fc80-4032-92f1-262120c1ced0" && di["OptInFlag"] === true) {
-                // modify links to subscription wall
-                allow = true;
+                // return back to content
+                var url = (new URLSearchParams(window.location.search)).get('return');
+                if (url != null)
+                  window.location.replace((new URLSearchParams(window.location.search)).get('return'))
             }
           });
         }
-        if (!allow) { modifyLinks(); }
       }
     });
   }
 }
+
+function hideLink() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var linktext = jQuery("h3#SubAcctLink");
+  var buttons = jQuery("[name$='btnNext_3']");
+  if (!jdata["isAnonymous"]) {
+    linktext.css('display', 'none');
+    linktext.css('visibility', 'hidden');
+    buttons.css('display', 'none');
+    buttons.css('visibility', 'hidden');
+  }
+}
+window.addEventListener("DOMContentLoaded", hideLink);
 window.addEventListener("DOMContentLoaded", checkSubscription);
 </script>

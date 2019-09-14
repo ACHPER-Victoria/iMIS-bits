@@ -6,7 +6,10 @@
 
 # TODO: Perhaps add some timeout retrying. I've had a few timeouts on
 #   longer scipts which is annoying
+from __future__ import print_function
+from sys import stderr
 import re, requests, json
+from datetime import datetime
 from time import sleep
 from os.path import expanduser, join
 home = expanduser("~")
@@ -47,37 +50,37 @@ ACCESS_BODY = """{
 }"""
 
 ADDGROUP_BODY = """{
-    "$type": "Asi.Soa.Membership.DataContracts.GroupMemberData, Asi.Contracts",
-    "MembershipDetails": {
-        "$type": "Asi.Soa.Membership.DataContracts.GroupMemberDetailDataCollection, Asi.Contracts",
-        "$values": [
-            {
-                "$type": "Asi.Soa.Membership.DataContracts.GroupMemberDetailData, Asi.Contracts",
-                "Stage": {
-                    "$type": "Asi.Soa.Membership.DataContracts.GroupStageData, Asi.Contracts"
-                },
-                "EffectiveDate": "2019-03-07T00:00:00",
-                "ExpirationDate": "2022-03-03T00:00:00",
-                "IsActive": true,
-                "Role": {
-                    "$type": "Asi.Soa.Membership.DataContracts.GroupRoleData, Asi.Contracts",
-                    "RoleId": "29AAE912-660E-4C53-B884-AD9EE27DEE0C",
-                    "Description": "Member",
-                    "Name": "Member"
-                }
-            }
-        ]
-    },
-    "Group": {
-        "$type": "Asi.Soa.Membership.DataContracts.GroupSummaryData, Asi.Contracts",
-        "GroupId": "%s",
-    },
-    "Party": {
-        "$type": "Asi.Soa.Membership.DataContracts.PartySummaryData, Asi.Contracts",
-        "PartyId": "%s",
-    },
-    "JoinDate": "2019-03-07T00:00:00",
-    "IsActive": true
+  "$type": "Asi.Soa.Membership.DataContracts.GroupMemberData, Asi.Contracts",
+  "MembershipDetails": {
+      "$type": "Asi.Soa.Membership.DataContracts.GroupMemberDetailDataCollection, Asi.Contracts",
+      "$values": [
+          {
+              "$type": "Asi.Soa.Membership.DataContracts.GroupMemberDetailData, Asi.Contracts",
+              "Stage": {
+                  "$type": "Asi.Soa.Membership.DataContracts.GroupStageData, Asi.Contracts"
+              },
+              "EffectiveDate": "%s",
+              "ExpirationDate": "%s",
+              "IsActive": true,
+              "Role": {
+                  "$type": "Asi.Soa.Membership.DataContracts.GroupRoleData, Asi.Contracts",
+                  "RoleId": "29AAE912-660E-4C53-B884-AD9EE27DEE0C",
+                  "Description": "Member",
+                  "Name": "Member"
+              }
+          }
+      ]
+  },
+  "Group": {
+      "$type": "Asi.Soa.Membership.DataContracts.GroupSummaryData, Asi.Contracts",
+      "GroupId": "%s",
+  },
+  "Party": {
+      "$type": "Asi.Soa.Membership.DataContracts.PartySummaryData, Asi.Contracts",
+      "PartyId": "%s",
+  },
+  "JoinDate": "%s",
+  "IsActive": true
 }"""
 
 ALLIANCE_BODY = """{
@@ -151,12 +154,12 @@ MAPPING = {}
 def findGroup(groupname):
     r = requests.get("%s/api/Group" % API_URL, headers=HEADERS, params={'Name': '%s' % groupname, "limit":1})
     if r.status_code == 404:
-        print r.text
+        print(r.text)
         return False
     elif r.status_code == 200:
         return r.json()["Items"]["$values"][0]["GroupId"]
     else:
-        print r.text
+        print(r.text)
         return None
 
 def lookupGroup(groupName):
@@ -175,15 +178,15 @@ def giveAccess(imisid):
             if value["Name"] == "CanPurchaseVCE":
                 if value["Value"]["$value"]:
                     return True
-        print "giving access"
+        print("giving access")
         r = requests.put("%s/api/UserOptions/%s" % (API_URL, imisid), headers=HEADERS, data=data_body)
     elif r.status_code == 404:
         r = requests.post("%s/api/UserOptions" % (API_URL), headers=HEADERS, data=data_body)
     else:
-        print "WAT:", r.text
+        print("WAT: %s" % r.text)
         return None
     if r.status_code != 200 and r.status_code != 201:
-        print r.status_code, " - ", r.text
+        print(r.status_code, " - ", r.text)
         return False
     else: return True
 
@@ -197,11 +200,11 @@ def enableProgramItems(eventid, enable=True):
                 if attr["Name"] == "WebEnabled": attr["Value"]["$value"] = enable
         #upload modifications
         r = requests.put("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS, json=event)
-        print r.status_code
+        print(r.status_code)
         if r.status_code != 200 and r.status_code != 201:
-            print r.text
+            print(r.text)
     else:
-        print r.status_code, r.text
+        print(r.status_code, r.text)
         return False
 
 def isUserInGroup(userid, groupname):
@@ -231,8 +234,8 @@ def addToGroup(user, groupname):
         return True
     r = requests.post("%s/api/GroupMember" % API_URL, headers=HEADERS, data=ADDGROUP_BODY % (groupID, user))
     if r.status_code != 201:
-        print "Error Adding (%s) to (%s) %s" % (user, groupname, groupID)
-        print r.text
+        print("Error Adding (%s) to (%s) %s" % (user, groupname, groupID))
+        print(r.text)
         return False
     else:
         return True
@@ -240,8 +243,8 @@ def addToGroup(user, groupname):
 def allianceList(alliancename):
     r = requests.get("%s/api/ACH_MarketingGroups" % API_URL, params={'GroupName': alliancename, "limit": 500}, headers=HEADERS)
     if r.status_code != 200:
-        print "Error getting list" % (user, groupname, groupID)
-        print r.text
+        print("Error getting list" % (user, groupname, groupID))
+        print(r.text)
         return False
     else:
         users = []
@@ -252,8 +255,8 @@ def allianceList(alliancename):
 def addToAlliance(userid, alliancename):
     r = requests.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY % (userid, userid, alliancename))
     if r.status_code != 201:
-        print "Error Adding (%s) to (%s)" % (userid, alliancename)
-        print r.text
+        print("Error Adding (%s) to (%s)" % (userid, alliancename))
+        print(r.text)
         return False
     else:
         return True
@@ -261,8 +264,8 @@ def addToAlliance(userid, alliancename):
 def getCommunicationPreferences():
     r = requests.get("%s/api/CommunicationType" % API_URL, headers=HEADERS)
     if r.status_code != 200:
-        print "Error"
-        print r.text
+        print("Error")
+        print(r.text)
         return False
     else:
         return map(lambda x: x["ReasonCode"], r.json()["Items"]["$values"])
@@ -270,21 +273,21 @@ def getCommunicationPreferences():
 def getCommPrefIDs(commpref):
     r = requests.get("%s/api/CommunicationType" % (API_URL), headers=HEADERS, params={'ReasonCode': commpref})
     if r.status_code != 200:
-        print "Error getting comm pref (%s)" % commpref
-        print r.text
+        print("Error getting comm pref (%s)" % commpref)
+        print(r.text)
         return False
     else:
         if r.json()["Count"] != 1:
-            print "Not enough/Too many results for (%s) %s" % (commpref, r.json()["Count"])
+            print("Not enough/Too many results for (%s) %s" % (commpref, r.json()["Count"]))
         typeid = r.json()["Items"]["$values"][0]["CommunicationTypeId"]
-        print "Fetching all (%s) - %s" % (commpref, typeid)
+        print("Fetching all (%s) - %s" % (commpref, typeid))
         IDs = []
         r = requests.get("%s/api/iqa" % (API_URL), headers=HEADERS,
             params=(('limit', 500),
                 ('QueryName', "$/%s/Contact Queries/CommunicationPrefs" % SITE_NAME),
                 ('parameter',"eq:"+typeid)))
         if r.status_code != 200:
-            print "ERROR: "+ r.text
+            print("ERROR: "+ r.text)
             return
         i = 0
         while r.json()["Count"] > 0:
@@ -296,7 +299,7 @@ def getCommPrefIDs(commpref):
                     ('QueryName', "$/%s/Contact Queries/CommunicationPrefs" % SITE_NAME),
                     ('parameter',"eq:"+typeid)))
             if r.status_code != 200:
-                print "ERROR: "+ r.text
+                print("ERROR: "+ r.text)
                 return
         return IDs
 
@@ -304,16 +307,144 @@ def ABset(uid, value):
     try:
         r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
     except requests.exceptions.ConnectionError:
-        print "Timeout..."
+        print("Timeout...")
         sleep(2)
-        print "Retrying"
+        print("Retrying")
         r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
     if r.status_code == 404:
         r = requests.post("%s/api/ABTest" % (API_URL), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
         if r.status_code != 201:
-            print "Error on post: " + r.text
+            print("Error on post: " + r.text)
             return False
     elif r.status_code != 201:
-        print "Error: " + r.text
+        print("Error: " + r.text)
         return False
     return True
+
+AOORGFIELDS = ("ContactKey", "AccountsEmail", "Level", "MarketingCategory", "MelbArch", "Region", "SchoolNumber", "SFOifApplicable")
+def populateAO_Org(orgent):
+    r = requests.get("%s/api/AO_OrganisationsData/%s" % (API_URL, orgent["ID"]), headers=HEADERS)
+    if r.status_code == 200:
+        for p in r.json()["Properties"]["$values"]:
+            if p["Name"] in AOORGFIELDS:
+                orgent[p["Name"]] = p["Value"]
+    for key in AOORGFIELDS:
+        if key not in orgent: orgent[key] = ""
+
+ADDRFIELDS = ("Address1", "Address2", "Address3", "City", "Country", "County",
+    "Email", "Fax", "FullAddress", "LastUpdated", "Phone",
+    "AddressPurpose", "StateProvince", "Zip" )
+ADDRMAP = { "Billing":"AddressNumber1", "Home Address": "AddressNumber2",
+    "Reception": "AddressNumber3"
+}
+def populateOrgAddresses(orgent):
+    r = requests.get("%s/api/CsAddress" % (API_URL), headers=HEADERS,
+        params=(('ID', orgent["ID"]),))
+    if r.status_code != 200:
+        print("ERROR: "+ r.text)
+        raise
+    addrj = r.json()
+    for addr in addrj["Items"]["$values"]:
+        a = {"_GOT" : True}
+        for prop in addr["Properties"]["$values"]:
+            if prop["Name"] in ADDRFIELDS: a[prop["Name"]] = prop["Value"]
+        if "AddressPurpose" in a and a["AddressPurpose"]:
+            orgent[ADDRMAP[a["AddressPurpose"]]] = a
+
+def IterateExpiredUsers():
+    for x in apiIterator("/api/CsContact", (("IsCompany", "false"), ("Status","ne:A"),
+        ('IsCompany', "false"))):
+        yield x
+
+def apiIterator(url, p):
+    p = list(p)
+    p.append(("limit","100"))
+    r = requests.get("%s%s" % (API_URL, url), headers=HEADERS, params=p)
+    if r.status_code != 200:
+        print("ERROR: "+ r.text)
+        return
+    print("Total: %s" % r.json()["TotalCount"], file=stderr)
+    while r.json()["Count"] > 0:
+        nextoffset = r.json()["NextOffset"]
+        for x in r.json()["Items"]["$values"]:
+            yield x
+        if nextoffset == 0: return
+        r = requests.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
+            params=p+[('offset', nextoffset)])
+        if r.status_code != 200:
+            print("ERROR: "+ r.text)
+            return
+
+def refreshUserGroups(pid):
+    mdremove = []
+    readd = set([])
+    for x in apiIterator("/api/GroupMember", (("PartyId", pid),)):
+        if x["Group"]["GroupClass"]["GroupClassId"] == "E88E66B1-9516-47F9-88DC-E2EB8A3EF13E":
+            # Purchased Products
+            # iterate Membership Details, remove all
+            for md in x["MembershipDetails"]["$values"]:
+                mdremove.append(md["GroupMemberDetailId"])
+            readd.add((x["Group"]["Name"], x["Group"]["GroupId"]))
+    # delete mds
+    print("Removing: %s" % mdremove)
+    print("THEN Adding: %s" % readd)
+    for md in mdremove:
+        r = requests.delete("%s/api/GroupMemberDetail/%s" % (API_URL, md), headers=HEADERS)
+        if r.status_code != 200:
+            print("ERROR: "+ r.text)
+            return
+    dt = datetime.now()
+    df = dt.replace(dt.year+2)
+    for gname, gid in readd:
+        r = requests.post("%s/api/GroupMember" % API_URL, headers=HEADERS,
+            data=ADDGROUP_BODY % (dt.isoformat(), df.isoformat(), gid, pid, dt.isoformat()))
+        if r.status_code != 201:
+            print("Error Adding (%s) to (%s) %s" % (pid, gname, gid))
+            print(r.text)
+            return
+
+
+def modifyEngagement(entity):
+    for i, prop in enumerate(entity["Properties"]["$values"]):
+        if prop["Name"] == "Status":
+            entity["Properties"]["$values"][i]["Value"] = "A"
+            return True
+    return False
+
+def updateExpired(entity):
+    uid = entity["Identity"]["IdentityElements"]["$values"][0]
+    print("Updating: %s" % uid)
+    if not modifyEngagement(entity):
+        "Failed to update ???"
+    r = requests.put("%s/api/CsContact/%s" % (API_URL, uid), headers=HEADERS, json=entity)
+    if r.status_code != 201:
+        print(r.text)
+        return False
+    return True
+
+ITERFIELDS = ("ID", "AddressNumber1", "AddressNumber2", "AddressNumber3", "Company",
+"Country", "FullAddress", "LastUpdated", "MemberType", "Status", "FullName")
+def IterateOrgs():
+    r = requests.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
+        params=(('limit', 100),
+            ('IsCompany', "true"),))
+    if r.status_code != 200:
+        print("ERROR: "+ r.text)
+        return
+    i = 0
+    while r.json()["Count"] > 0:
+        i += 100
+        for x in r.json()["Items"]["$values"]:
+            entry = {}
+            for p in x["Properties"]["$values"]:
+                if p["Name"] in ITERFIELDS:
+                    entry[p["Name"]] = p["Value"]
+            populateAO_Org(entry)
+            populateOrgAddresses(entry)
+            yield entry
+        r = requests.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
+            params=(('limit', 100), ('offset', i),
+                ('IsCompany', "true"),))
+        if r.status_code != 200:
+            print("ERROR: "+ r.text)
+            return
