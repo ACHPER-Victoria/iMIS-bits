@@ -70,8 +70,8 @@ function createCert(eventname, start, end, name, ceu, eventid) {
     return null;
   }
   doc.image(logo, 0, 30, {fit:[841.89, 90], align: 'center', valign: 'center'});
-  var normsize = 24;
-  var itemsize = 36;
+  var normsize = 22;
+  var itemsize = 34;
   var spacing = 0.8;
   doc.fontSize(normsize); doc.font('Times-Roman').text('').moveDown(2);
   doc.font('Times-Roman').text('Certificate of Attendence', {align: 'center'});
