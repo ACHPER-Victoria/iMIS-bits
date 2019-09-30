@@ -1,0 +1,40 @@
+
+<script src="/common/Uploaded%20files/Code/alliance/alliance-1.js"></script>
+
+
+<a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
+<style>.addtopalign { vertical-align: top; }</style>
+<p><span class="addtopalign">Add Users to Alliance: </span>
+  <select id="AlliancePullDown" size="15" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+<p>New alliance Code:
+  <input type="text" value="" id="newAllianceCodeInput">
+  Description:
+  <input type="text" value="" id="newAllianceDescInput">
+  <a id="createAlliance" class="TextButton" href="#" onclick="createAlliance();return false;">Create Alliance</a>
+</p>
+<p>Force subscription to (Only use this if consent was given when list collected):<br>
+  <select id="SubscribePullDown" size="6" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+
+<label for="clist">CSV file of people to process:</label>
+<input type="file"
+       id="clist" onchange="handleFiles(this.files)"
+       accept=".csv">
+<p>CSV Columns:
+  <ul id="csvfields"></ul>
+</p>
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Processing CSV</a>
+<p>Progress: <span id="importcount"></span>/<span id="importtotal"></span></p>
+<p>Downloads:
+  <ul id="downlist"></ul>
+</p>
+<p>Messages</p>
+<textarea id="importlog" rows="25" cols="100" style="width: 40em;"></textarea>
+<script type="text/javascript">
+  window.addEventListener("load", _ => { populateFields(); } );
+</script>
