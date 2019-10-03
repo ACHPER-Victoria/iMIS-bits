@@ -106,6 +106,8 @@ venv.bak/
 # ignore temp js files for iMIS upload
 *.js[0-9].txt
 *.js.txt
+*.css.txt
+
 python/missing-all2.csv
 python/errors.txt
 python/output.txt

@@ -131,3 +131,43 @@ function partyAddSubscriptions(obj, typeids) {
   subs.forEach(x => { tlist.push(genSubscriptionBody(x)); });
   return obj;
 }
+
+SUBEMAILBODY =
+{
+    "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
+    "EntityTypeName": "ResourceEmails",
+    "PrimaryParentEntityTypeName": "Standalone",
+    "Properties": {
+        "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
+        "$values": [
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "Processed",
+                "Value": {
+                    "$type": "System.Boolean",
+                    "$value": false
+                }
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "Email",
+                "Value": "__"
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "ImisID",
+                "Value": {
+                    "$type": "System.Int32",
+                    "$value": 0
+                }
+            }
+        ]
+    }
+}
+function genSubEmailBody(id, email) {
+  body = JSON.parse(JSON.stringify(ALLIANCE_BODY));
+  body["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] = id.toString();
+  body["Properties"]["$values"][0]["Value"] = id;
+  body["Properties"]["$values"][1]["Value"] = alliance;
+  return body;
+}

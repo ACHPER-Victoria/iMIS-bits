@@ -1,9 +1,9 @@
-<!-- Modifylinks if subscription found -->
+<!-- Modifylinks if subscription found on content page.-->
 <script type="text/javascript">
 function modifyLinks() {
   // https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx
-  jQuery(".TOTW-content a").attr('href', function(i, val) {
-    if (val.startsWith("http://bit.ly") || val.startsWith("https://bit.ly")) {
+  jQuery(".sub-res-links a").attr('href', function(i, val) {
+    if (val.startsWith("http://bit.ly") || val.startsWith("https://bit.ly") || val.startsWith("javascript:__")) {
       this.target = "";
       return "https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx?return=" + encodeURIComponent(window.location);
     }
@@ -12,6 +12,7 @@ function modifyLinks() {
 //window.location.replace(window.location.href.replace("-visitor", ""));
 function checkSubscription() {
   var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  var allow = false;
   if (userid) {
     jQuery.ajax("/api/Party/"+userid,
     {
@@ -19,7 +20,6 @@ function checkSubscription() {
       contentType: "application/json",
       headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
       success: function(data) {
-        allow = false;
         if (data["CommunicationTypePreferences"]) {
           data["CommunicationTypePreferences"]["$values"].forEach(function(di) {
             if (di["CommunicationTypeId"] == "34df42a6-fc80-4032-92f1-262120c1ced0" && di["OptInFlag"] === true) {
@@ -28,10 +28,10 @@ function checkSubscription() {
             }
           });
         }
-        if (!allow) { modifyLinks(); }
       }
     });
   }
+  if (!allow) { modifyLinks(); }
 }
 window.addEventListener("DOMContentLoaded", checkSubscription);
 </script>

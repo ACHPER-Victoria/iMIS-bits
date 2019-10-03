@@ -1,0 +1,85 @@
+<!-- Head -->
+<script src="/Common/Uploaded files/Code/tingle.min.js"></script>
+<script type="text/javascript">
+  function modalinit(userid) {
+    // instanciate new modal
+    if (userid == 217) {
+      userid = "";
+    }
+
+    var modal = new tingle.modal({
+        footer: true,
+        stickyFooter: false,
+        closeMethods: ['overlay', 'button', 'escape'],
+        closeLabel: "Close",
+        cssClass: ['custom-class-1', 'custom-class-2'],
+        onOpen: function() {
+            console.log('modal open');
+        },
+        onClose: function() {
+            console.log('modal closed');
+        },
+        beforeClose: function() {
+            var emailaddr = jQuery('#emailaddrinput').val();
+            if (!emailaddr || !emailaddr.includes("@")) {
+              jQuery('span#emailstatus').innerHTML("<strong>Email address required.</strong>");
+              return false; // nothing happens
+            } else {
+              var status = emailSaved();
+              if (status === true) {
+                // now we can close
+                return true;
+              } else if (status === null){
+                // API call here
+                submitEmail(email, userid);
+                jQuery('span#emailstatus').text("Saving...");
+                return false; // close the modal
+              } else {
+                // attempted to close another time, ignore
+                return false;
+              }
+            }
+        }
+    });
+    // set content
+    modal.setContent(`<h2> email address required </h2>
+    To view this content you will need to submit your e-mail address. You consent to your e-mail address to be used for marketing purposes.
+    <br>
+    Email address: <input id="emailaddrinput">
+    <br>
+    <span id="emailstatus"></span>`);
+    modal.addFooterBtn('Button label', 'tingle-btn tingle-btn--primary', function() {
+        modal.close();
+    });
+    storeModal(modal);
+    modal.open();
+  }
+
+  function checkSubscription() {
+    var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+    var allow = false;
+    if (userid) {
+      jQuery.ajax("/api/Party/"+userid,
+      {
+        type : "get",
+        contentType: "application/json",
+        headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+        success: function(data) {
+          if (data["CommunicationTypePreferences"]) {
+            data["CommunicationTypePreferences"]["$values"].forEach(function(di) {
+              if (di["CommunicationTypeId"] == "34df42a6-fc80-4032-92f1-262120c1ced0" && di["OptInFlag"] === true) {
+                  // modify links to subscription wall
+                  allow = true;
+              }
+            });
+          }
+        }
+      });
+    }
+    if (!allow) { modalinit(userid); }
+  }
+window.addEventListener("DOMContentLoaded", checkSubscription);
+</script>
+<link rel="stylesheet" type="text/css" href="/Common/Uploaded files/Code/tingle.min.css">
+
+<!-- body -->

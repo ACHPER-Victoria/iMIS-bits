@@ -4,13 +4,14 @@
   <option value="_"></option>
 </select>
 <p>Status: <span id="csvStatus"></span><p>
-<p>Processing: <span id="exportcount"></span>/<span id="exporttotal"></span></p>
+<p>Processing: <span id="csvcount"></span>/<span id="csvtotal"></span></p>
 <p>Messages</p>
-<textarea id="exportlog" rows="25" cols="100" style="width: 40em;"></textarea>
+<textarea id="csvlog" rows="25" cols="100" style="width: 40em;"></textarea>
 <script type="text/javascript">
-// First Name, Last Name, Org, Member, Sector, Region, Special Diet, How did you hear about, Purchase Order Numb
-// Amount, Session A, Session B, Session C, Invoice Number, email, Reg status, Registration Option
-window.addEventListener("DOMContentLoaded", runReport);
+  function addOptions() {
+
+  }
+  window.addEventListener("DOMContentLoaded", addOptions);
 </script>
 
 Select CSV

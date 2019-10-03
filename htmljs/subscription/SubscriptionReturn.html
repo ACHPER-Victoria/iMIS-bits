@@ -1,5 +1,17 @@
-<!-- Redirect if subscription found -->
+<!-- Redirect/return if subscription found -->
 <script type="text/javascript">
+function fixlink() {
+  // https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx
+  jQuery(".sub-res-accountlink a").attr('href', function(i, val) {
+    if (val && val.startsWith("https://achper.vic.edu.au/public/resources/subscribe-")) {
+      var ret = (new URLSearchParams(window.location.search)).get('return')
+      if (ret) {
+        this.target = "";
+        return val + "?return=" + encodeURIComponent(ret);
+      }
+    }
+  });
+}
 function checkSubscription() {
   var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
   if (userid) {
@@ -38,4 +50,5 @@ function hideLink() {
 }
 window.addEventListener("DOMContentLoaded", hideLink);
 window.addEventListener("DOMContentLoaded", checkSubscription);
+window.addEventListener("DOMContentLoaded", fixlink);
 </script>
