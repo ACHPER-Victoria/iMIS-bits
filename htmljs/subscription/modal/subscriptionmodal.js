@@ -10,27 +10,9 @@ if (!String.prototype.format) {
   };
 }
 
-var myWorker = new Worker('/common/Uploaded%20Files/Code/subscription/SubscriptionModalWorker.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/subscribewall/SubscriptionModalWorker.js');
 var MODAL = null;
 var STATUS = null;
-
-function saveFile(data) {
-  var csvData = new Blob(["\ufeff"+data], {type: 'text/csv;charset=utf-8;'});
-  var exportFilename = "{0}-{1}.csv".format(eventid, (new Date()).toISOString().slice(0,10))
-  importlog("Downloading now...");
-  //IE11 & Edge
-  if (navigator.msSaveBlob) {
-      navigator.msSaveBlob(csvData, exportFilename);
-  } else {
-      //In FF link must be added to DOM to be clicked
-      var link = document.createElement('a');
-      link.href = window.URL.createObjectURL(csvData);
-      link.setAttribute('download', exportFilename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  }
-}
 
 const workerMaker = (type, arg) => {
   // check if a worker has been imported
@@ -63,130 +45,112 @@ function submitEmail(email, userid) {
 function complete(data) {
   jQuery('span#emailstatus').text("Done.");
   STATUS = true;
-  MODAL.close();
+  // Email stored.
+  // Let's store cookie so we don't keep prompting:
+  Cookies.set('ACHsubscribemodal', 'yes', { expires: 182, path: '' })
+  jQuery('span#emailstatus').text("Saved. Please wait...")
+  location.reload();
+  console.log("Reload now.");
 }
 function emailSaved() {
-
+  return STATUS;
 }
 
-function populatePullDownData(data) {
-  var selectfield = jQuery("#AlliancePullDown");
-  jQuery('#AlliancePullDown option:gt(0)').remove(); // remove all options, but not the first
-  for (let i of data[0]) {
-    selectfield.append(jQuery("<option></option>")
-       .attr("value", i[0]).text(i[1]));
-  }
-  selectfield = jQuery("#SubscribePullDown");
-  jQuery('#SubscribePullDown option:gt(0)').remove(); // remove all options, but not the first
-  for (let i of data[1]) {
-    selectfield.append(jQuery("<option></option>")
-       .attr("value", i[0]).text(i[1]));
-  }
-  disableUI(false);
-}
-
-function disableUI(disable, start=false) {
-  if (disable) {
-    document.getElementById("createAlliance").setAttribute("disabled", "disabled");
-    document.getElementById("clist").setAttribute("disabled", "disabled");
-    document.getElementById("resetbutton").setAttribute("disabled", "disabled");
-    if (start) { document.getElementById("startbutton").setAttribute("disabled", "disabled"); }
-  } else {
-    document.getElementById("createAlliance").removeAttribute("disabled");
-    document.getElementById("clist").removeAttribute("disabled");
-    document.getElementById("resetbutton").removeAttribute("disabled");
-    if (start) { document.getElementById("startbutton").removeAttribute("disabled"); }
-  }
-}
-
-function createAlliance() {
-  disableUI(true);
-  // worker
-  // code newAllianceCodeInput
-  var code = document.getElementById("newAllianceCodeInput").value
-  // desc newAllianceDescInput
-  var desc = document.getElementById("newAllianceDescInput").value
-  if (!code) {
-    importlog("Missing code.");
-    disableUI(false); return;
-  }
-  if (!desc) {
-    importlog("Missing description.");
-    disableUI(false); return;
-  }
-  workerMaker('createAlliance', [document.getElementById("__RequestVerificationToken").value, code, desc]);
-}
-function createAllianceDone(data) {
-  if (data) {
-    importlog("Created Alliance, refreshing list...");
-    populatePullDown();
-  } else {
-    importlog("Failed to create Alliance.");
-    disableUI(false);
-  }
-}
-
-CSVFILE = null;
-function handleFiles(flist) {
-  // clear csvfields
-  disableUI(true);
-  jQuery('#csvfields li').remove();
-  // getHeaders
-  CSVFILE = flist[0]
-  workerMaker('getHeaders', [document.getElementById("__RequestVerificationToken").value, CSVFILE]);
-}
-FIELDS = [["ID", "uid"], ["First Name", "firstname"], ["Last Name", "lastname"],
-  ["Email address", "email"], ["Phone", "phone"]];
-function handleFilesDone(headers) {
-  var listelem = jQuery("#csvfields");
-  FIELDS.forEach(function(i) {
-    // create select list item
-    var s = jQuery("<select id='{0}'></select>".format(i[1]));
-    s.append(jQuery("<option></option>").attr("value", "").text("(NONE)"));
-    headers.forEach(function (h) {
-      s.append(jQuery("<option></option>").attr("value", h).text(h));
-    });
-    listelem.append(jQuery("<li></li>").append(jQuery("<span>{0}</span>".format(i[0])).add(s)));
+function modifyLinks() {
+  // https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx
+  jQuery(".sub-res-links a").attr('href', function(i, val) {
+    if (val.startsWith("http://bit.ly") || val.startsWith("https://bit.ly") || val.startsWith("javascript:__")) {
+      jQuery(this).attr('onClick', "modalinit();return false;");
+      return "#";
+    }
   });
-  if (headers != null) {
-    document.getElementById("startbutton").removeAttribute("disabled");
-  } else {
-    document.getElementById("startbutton").setAttribute("disabled", "disabled");
-  }
-  disableUI(false);
 }
 
-function startProcessing() {
-  if (CSVFILE === null) { importlog("No file selected"); return; }
-  // get headerfields
-  disableUI(true, true);
-  var fields = {
-    "uid" : jQuery("#uid").val(),
-    "firstname" : jQuery("#firstname").val(),
-    "lastname" : jQuery("#lastname").val(),
-    "email" : jQuery("#email").val(),
-    "phone" : jQuery("#phone").val(),
+function emailSubmit() {
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (userid == 217) {
+    userid = "";
   }
-  var alliances = jQuery("#AlliancePullDown").val();
-  var subscribes = jQuery("#SubscribePullDown").val();
-  jQuery('#downlist li').remove();
-  workerMaker('startProcessing', [document.getElementById("__RequestVerificationToken").value,
-    CSVFILE, fields, alliances, subscribes]);
+  var emailaddr = jQuery('#emailaddrinput').val();
+  if (!emailaddr || !emailaddr.includes("@")) {
+    jQuery('span#emailstatus').html("<strong>Email address required.</strong>");
+  } else {
+    var status = emailSaved();
+    if (status === true) {
+      // Somehow user has tried to close the box but the page didn't reload before then... Maybe display message?
+      jQuery('span#emailstatus').text("Please reload the page to gain access to the resource.")
+    } else if (status === null) {
+      // API call here
+      submitEmail(emailaddr, userid);
+      jQuery('span#emailstatus').text("Saving...");
+    } else {
+      // attempted to close another time, ignore
+      return false;
+    }
+  }
 }
-DOWNLINKS = ["NotFound", "NotUnique", "Found"]; //nf, nu, found
-function endProcessing(data) {
-  var downlist = document.getElementById("downlist");
-  for(var i=0;i<DOWNLINKS.length;i++) {
-    if (data[i]) { data[i] = "\ufeff"+data[i]; }
-    var csvData = new Blob([data[i]], {type: 'text/csv;charset=utf-8;'});
-    var exportFilename = "{0}-{1}.csv".format(DOWNLINKS[i], (new Date()).toISOString().slice(0,16))
-    var node = document.createElement("li");
-    var link = document.createElement('a');
-    link.href = window.URL.createObjectURL(csvData);
-    link.setAttribute('download', exportFilename);
-    link.innerHTML = exportFilename;
-    node.appendChild(link);
-    downlist.appendChild(node);
-    disableUI(false, true);
+
+function modalinit() {
+  // instanciate new modal
+  var modal = new tingle.modal({
+      footer: true,
+      stickyFooter: false,
+      closeMethods: ['overlay', 'button', 'escape'],
+      closeLabel: "Close",
+      cssClass: ['custom-class-1', 'custom-class-2'],
+      onOpen: function() {
+          console.log('modal open');
+      },
+      onClose: function() {
+          console.log('modal closed');
+      },
+      beforeClose: function() {
+        return true; // alow close.
+      }
+  });
+  // set content
+  modal.setContent(`<h2> email address required </h2>
+  To view this content you will need to submit your e-mail address. You consent to your e-mail address to be used for marketing purposes.
+  <br>
+  Email address: <input id="emailaddrinput">
+  <br>
+  <span id="emailstatus"></span>`);
+  modal.addFooterBtn('Submit', 'tingle-btn tingle-btn--primary', emailSubmit);
+  storeModal(modal);
+  modal.open();
+}
+
+function processComsResponse(data) {
+  var allow = false;
+  if (data["CommunicationTypePreferences"]) {
+    data["CommunicationTypePreferences"]["$values"].forEach(function(di) {
+      if (di["CommunicationTypeId"] == "34df42a6-fc80-4032-92f1-262120c1ced0" && di["OptInFlag"] === true) {
+          // modify links to subscription wall
+          allow = true;
+      }
+    });
+  }
+  if (!allow) {
+    // check cookie
+    if (Cookies.get('ACHsubscribemodal') === 'yes') {
+      return; // Cookie is set, so abort.
+    } else { modifyLinks(); } // modify links
+  }
+}
+
+function checkSubscription() {
+  // Check for bypass flag:
+  var check = (new URLSearchParams(window.location.search)).get('TOTW');
+  if (check === "") { return; }
+
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (userid) {
+    jQuery.ajax("/api/Party/"+userid,
+    {
+      type : "get",
+      contentType: "application/json",
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: processComsResponse
+    });
   }
 }

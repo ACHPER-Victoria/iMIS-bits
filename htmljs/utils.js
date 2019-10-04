@@ -38,17 +38,17 @@ function formatQueryString(url, params) {
   return url + "?" + parts.join('&');
 }
 
-function dorequest(url, func = null, errfunc = null, params = [], data = null, method="POST") {
+function dorequest(url, func = null, errfunc = null, params = [], data = null, method="POST", put_token=true) {
   var xhr = new XMLHttpRequest();
-  if (data) { xhr.open(method, url, false); }
+  if (data !== null) { xhr.open(method, url, false); }
   else { xhr.open('GET', formatQueryString(url, params), false); }
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('RequestVerificationToken', token);
+  if (put_token) { xhr.setRequestHeader('RequestVerificationToken', token); }
   if (data) { params.forEach(param => { xhr.setRequestHeader(param[0], param[1]); }); }
   var response = "";
   var success = true;
   xhr.onload = function() {
-    if (xhr.status === 200 || xhr.status === 201) {
+    if (xhr.status === 200 || xhr.status === 201 || xhr.status === 202) {
       response = JSON.parse(xhr.responseText);
       if (func) { func(response); }
       success = true;
@@ -134,40 +134,14 @@ function partyAddSubscriptions(obj, typeids) {
 
 SUBEMAILBODY =
 {
-    "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
-    "EntityTypeName": "ResourceEmails",
-    "PrimaryParentEntityTypeName": "Standalone",
-    "Properties": {
-        "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
-        "$values": [
-            {
-                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
-                "Name": "Processed",
-                "Value": {
-                    "$type": "System.Boolean",
-                    "$value": false
-                }
-            },
-            {
-                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
-                "Name": "Email",
-                "Value": "__"
-            },
-            {
-                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
-                "Name": "ImisID",
-                "Value": {
-                    "$type": "System.Int32",
-                    "$value": 0
-                }
-            }
-        ]
-    }
+    "emailaddress" : "",
+    "imisid" : "",
+    "entered" : ""
 }
 function genSubEmailBody(id, email) {
-  body = JSON.parse(JSON.stringify(ALLIANCE_BODY));
-  body["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] = id.toString();
-  body["Properties"]["$values"][0]["Value"] = id;
-  body["Properties"]["$values"][1]["Value"] = alliance;
+  body = JSON.parse(JSON.stringify(SUBEMAILBODY));
+  body["entered"] = (new Date()).toJSON();
+  body["emailaddress"] = email;
+  if (id) { body["imisid"] = id.toString(); }
   return body;
 }
