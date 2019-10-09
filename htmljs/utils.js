@@ -12,7 +12,7 @@ function* apiIterator(url, p=[], errfunc = _i => {console.log("E: " + _i)}) {
       var values = response["Items"]["$values"];
       for (var i=0; i<values.length; i++) { yield values[i]; }
       if (nextoffset == 0){ return; }
-      dorequest(url, resp => {response = resp; }, errText => { error = true; errfunc(errText); }, p.concat(['offset', nextoffset]))
+      dorequest(url, resp => {response = resp; }, errText => { error = true; errfunc(errText); }, p.concat([['offset', nextoffset]]))
       if (error) { return; }
   }
 }
@@ -49,7 +49,7 @@ function dorequest(url, func = null, errfunc = null, params = [], data = null, m
   var success = true;
   xhr.onload = function() {
     if (xhr.status === 200 || xhr.status === 201 || xhr.status === 202) {
-      response = JSON.parse(xhr.responseText);
+      if (xhr.responseText) { response = JSON.parse(xhr.responseText); }
       if (func) { func(response); }
       success = true;
     }

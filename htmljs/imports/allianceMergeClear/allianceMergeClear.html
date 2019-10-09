@@ -1,0 +1,36 @@
+<script src="/common/Uploaded%20files/Code/alliance-merge/alliancemerge.js"></script>
+<style>.addtopalign { vertical-align: top; }</style>
+<script type="text/javascript">
+  window.addEventListener("load", _ => { populateFields(); } );
+</script>
+
+<h1>Merge alliances</h1>
+<h3>Warning, this will clear the Output alliance</h3>
+<a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
+<p> <input type="checkbox" id="IncEveryone" name="inceveryone" value="Everyone"> Include Everyone (will take awhile) </p>
+<p>Include people from these alliances (can leave blank if everyone): <br>
+  <select id="IncAlliancePullDown" size="8" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+<p>Exclude people from these alliances: <br>
+  <select id="ExcAlliancePullDown" size="20" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+<p>Create alliance:
+  <input type="text" value="" id="newAllianceCodeInput">
+  Description:
+  <input type="text" value="" id="newAllianceDescInput">
+  <a id="createAlliance" class="TextButton" href="#" onclick="createAlliance();return false;">Create Alliance</a>
+</p>
+<p>Output of merge goes in to this alliance: <br>
+  <select id="TargetAlliancePullDown">
+    <option value="">(None)</option>
+  </select>
+</p>
+
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Processing</a>
+<p>Progress: <span id="mergecount"></span>/<span id="mergetotal"></span></p>
+<p>Messages</p>
+<textarea id="mergelog" rows="25" cols="100" style="width: 40em;"></textarea>

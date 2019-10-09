@@ -1,0 +1,18 @@
+<!-- Head -->
+<script src="/common/Uploaded%20files/Code/storemirror/storemirror.js"></script>
+
+<!-- body -->
+<h1> Do not use this! </h1>
+<p>Syncronise store categories (comma separated):<br>
+<input type="text" class="InputXXLarge" value="" id="storecategories"><br>
+<a id="SyncButton" class="TextButton" href="#" onclick="startSync();return false;">Start</a></p>
+<p>Progress: <span id="currentcount"></span>/<span id="totalcount"></span></p>
+<p id="GroupActionStatus">&nbsp;</p>
+<p>Messages<br>
+<textarea id="synclog" rows="25" cols="100" style="width: 40em;"></textarea></p>
+<p>ACTION to take:<br>
+<textarea id="actionlog" rows="25" cols="100" style="width: 40em;"></textarea></p>
+
+<script type="text/javascript">
+  window.addEventListener("DOMContentLoaded", initSyncPage);
+</script>
