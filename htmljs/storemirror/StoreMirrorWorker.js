@@ -44,8 +44,10 @@ onmessage = function(e) {
     }
 }
 
+CLASSID = "SALES-{0}";
+
 function checkMemberCat(cat) {
-  var result = dorequest("/api/CsProductCategory/{0}-M".format(cat));
+  var result = dorequest("/api/ItemClass/{0}-M".format(CLASSID.format(cat)));
   return result[0];
 }
 
@@ -54,8 +56,8 @@ function countItems(categories) {
   for (const cat of categories.split(",")) {
     // get count and add to total
     // Also check if member category exists...
-    var params = [["limit", 1], ["ProductCategory", cat], ["Status", "A"]];
-    var result = dorequest("/api/CsProduct", null, null, params);
+    var params = [["limit", 1], ["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+    var result = dorequest("/api/Item", null, null, params);
     if (result[0] && result[1]["TotalCount"] > 0) {
       // add count
       if (checkMemberCat(cat)) {
@@ -64,7 +66,7 @@ function countItems(categories) {
         synclog("Store category (-M suffix) not found for ({0})".format(cat));
       }
     } else if (result[0]) { synclog("No items for ({0})".format(cat)); }
-    else { synclog("Error ({0})".format(result[1]))}
+    else { synclog("CI Error ({0})".format(result[1])); return false; }
   }
   return itemCount;
 }
@@ -76,11 +78,11 @@ function incrementProcessed() {
 }
 
 function itemMExists(code) {
-  var result = dorequest("/api/CsProduct/{0}M".format(code));
+  var result = dorequest("/api/Item/{0}M".format(code));
   return result[0];
 }
 
-function prodProp(item, pname, pval=null) {
+function genericProp(item, pname, pval=null) {
   for (const prop of item["Properties"]["$values"])
   {
     if (prop["Name"] === pname) {
@@ -94,81 +96,187 @@ function prodProp(item, pname, pval=null) {
     }
   }
 }
-
-var REMOVE_PROPS = ["DeferredIncomeAccount", "Description", "IMAGE_URL", "ProductMinor", "THUMBNAIL_URL"];
-function cleanProps(item) {
+function deleteGenericProp(pitem, pname) {
   var newprops = [];
-  for (const prop of item["Properties"]["$values"]) {
-    if (!REMOVE_PROPS.includes(prop["Name"])) {
+  for (const prop of pitem["Properties"]["$values"]) {
+    if (prop["Name"] != pname) {
       newprops.push(prop);
     }
   }
-  item["Properties"]["$values"] = newprops;
+  pitem["Properties"]["$values"] = newprops;
 }
 
-// TODO: Handle IS_KIT case
+function processSetItem(item) {
+  // list member item items:
+  var result = dorequest("/api/Product_Kit?PRODUCT_CODE={0}M".format(item["ItemCode"]))
+  if (result[0]) {
+    for (const kitem of result[1]["Items"]["$values"]) {
+      // remove Product_Kit items:
+      if (!deleteProductKit(kitem["Identity"]["IdentityElements"]["$values"][0])) { return false; }
+    }
+  } else { synclog("pSI-1 Error ({0})".format(result[1])); return false; }
+  // add/remake the original Kit Items:
+  result = dorequest("/api/Product_Kit?PRODUCT_CODE={0}".format(item["ItemCode"]))
+  if (result[0]) {
+    for (const kitem of result[1]["Items"]["$values"]) {
+      // add Product_Kit items:
+      if (!addProductKit(kitem, "{0}M".format(item["ItemCode"]))) { return false; }
+    }
+  } else { synclog("pSI Error ({0})".format(result[1])); return false; }
+  return true;
+}
 
-function updateMItem(item) {
-  var icode = prodProp(item, "ProductCode");
-  var newitem = dorequest("/api/CsProduct/{0}M".format(icode))[1];
-  // append " - Member" to item title for newitem, swap price to discount price
-  console.log("Updating item... ({0})".format(icode))
-  if (prodProp(item, "IS_KIT")) {
-    actionlog("({0}) is an updated collection. Make sure it has all it's items.".format(prodProp(item, "Title")));
+function processItem(item, setItem=false) {
+  var code = item["ItemCode"];
+  var mcode = "{0}M".format(code);
+  // update code
+  item["ItemCode"] = mcode;
+  item["ItemId"] = mcode;
+  // Name, append " - Member" to item title for newitem
+  if (item["Name"].length > 55) {
+    synclog("WARNING: Item name too long ({0})".format(item["Name"]));
+    item["Name"] = item["Name"].slice(0, 56);
+    synclog("WARNING: Shrinking to ({0})".format("{0} - Member".format(item["Name"]).slice(0,60)));
+  } else if ("{0} - Member".format(item["Name"]).length > 60) {
+    synclog("WARNING: Item name too long ({0})".format(item["Name"]));
+    synclog("WARNING: Shrinking to ({0})".format("{0} - Member".format(item["Name"]).slice(0,60)));
   }
-  // set item code(s)
-  var nicode = prodProp(newitem, "ProductCode");
-  prodProp(item, "ProductCode", nicode);
-  prodProp(item, "ProductMajor", nicode);
-  delete item["Identity"]
+  item["Name"] = "{0} - Member".format(item["Name"]).slice(0,60);
   // adjust category code.
-  var ncat = "{0}-M".format(prodProp(item, "ProductCategory"))
-  prodProp(item, "ProductCategory", ncat);
-  // Change name
-  var nname = "{0} - Member".format(prodProp(item, "Title"))
-  prodProp(item, "Title", nname);
-  prodProp(item, "TitleKey", "{0} MEMBER".format(prodProp(item, "TitleKey")));
-  // set price accordingly... price1 (discount) -> Price 2
-  prodProp(item, "Price2", prodProp(item, "Price1"));
-  // clean up blank values API complains about
-  cleanProps(item);
-  var result = dorequest("/api/ACH_CsProduct/{0}".format(nicode), null, null, [], item, "PUT")
+  item["ItemClass"]["ItemClassId"] = "{0}-M".format(item["ItemClass"]["ItemClassId"]);
+  delete item["ItemClass"]["Name"];
+  // if setItem, nuke the Components list only on item creation.
+  if (setItem) {
+    item["Components"]["$values"] = [];
+  }
+  return item;
+}
+
+function deleteProductKit(id) {
+  var result = dorequest("/api/Product_Kit/{0}".format(id), null, null, [], "", "DELETE");
   if (result[0]) { return true; }
   else {
-    synclog("Error ({0})".format(result[1]));
+    synclog("DPK Error ({0})".format(result[1]));
     return false;
   }
 }
-function createMItem(item) {
-  var newCode = "{0}M".format(prodProp(item, "ProductCode"));
-  console.log("Creating item... ({0})".format(newCode))
-  if (prodProp(item, "IS_KIT")) {
-    actionlog("({0}) is a *NEW* collection. Make sure to ADD all it's items.".format(prodProp(item, "Title")));
+function addProductKit(kitem, pcode) {
+  delete kitem["Identity"];
+  genericProp(kitem, "PRODUCT_CODE", pcode)
+  deleteGenericProp(kitem, "SEQN");
+  var result = dorequest("/api/Product_Kit", null, null, [], kitem);
+  if (result[0]) { return true; }
+  else {
+    synclog("APK Error ({0})".format(result[1]));
+    return false;
   }
+}
+
+function getPrice(itemID, type){
+  var params = [["ItemId", itemID], ["PriceSheetId", type]];
+  var result = dorequest("/api/ItemPrice", null, null, params);
+  if (result[0] && result[1]["Count"] > 0) {
+    return result[1]["Items"]["$values"][0]["DefaultPrice"]["Amount"]
+  } else {
+    synclog("uP Error: ({0})".format(result[1])); return false;
+  }
+}
+function setPrice(itemID, type, val){
+  var params = [["ItemId", itemID], ["PriceSheetId", type]];
+  var result = dorequest("/api/ItemPrice", null, null, params);
+  if (result[0] && result[1]["Count"] > 0) {
+    // get structure
+    var ipricedata = result[1]["Items"]["$values"][0];
+    // set value
+    ipricedata["DefaultPrice"]["Amount"] = val;
+    // PUT structure
+    var putresult = dorequest("/api/ItemPrice/{0}".format(itemID), null, null, [], ipricedata, "PUT");
+    if (putresult[0]) {
+
+    } else {
+      synclog("sP-1 Error: ({0})".format(putresult[1])); return false;
+    }
+  } else {
+    synclog("sP Error: ({0})".format(result[1])); return false;
+  }
+}
+
+function updatePrices(itemID) {
+  var member = 99999;
+  var standard = 99999;
+  // get original prices Member, then Standard
+  member = getPrice(itemID, "Member");
+  standard = getPrice(itemID, "Standard");
+  if (member === false || standard === false) { return false; }
+  //change itemID for member item ID
+  itemID = "{0}M".format(itemID);
+  // set price for both to member price.
+  member = setPrice(itemID, "Member", member);
+  standard = setPrice(itemID, "Standard", member);
+  if (member === false || standard === false) { return false; }
+  return true;
+}
+
+function doMemberItem(item) {
+  // POST/PUT update
+  var origcode = item["ItemCode"];
+  var method = "POST";
+  var url = "/api/Item";
+  var setItem = false;
+  if (item["$type"].includes("Asi.Soa.Commerce.DataContracts.ItemSetItemData")) {
+    setItem = true;
+    url = "{0}SetItem".format(url);
+  }
+  var exists = itemMExists(origcode);
+  var ret = null;
+  if (exists) {
+    method = "PUT";
+    url = "{0}/{1}M".format(url, origcode);
+  }
+
+  if (setItem) {
+    // nuke Product_Kits:
+    processSetItem(item);
+    if (!exists) {
+      // pre-make new item with empty components making a copy of item
+      var sitem = processItem(JSON.parse(JSON.stringify(item)), setItem);
+      var sresult = dorequest(url, null, null, [], sitem, "POST")
+      if (!sresult[0]) { synclog("dMI-1 Error ({0})".format(sresult[1])); return false; }
+      method = "PUT"
+      url = "/api/ItemSetItem/{0}M".format(origcode)
+    }
+  }
+  item = processItem(item); // reassignment not really needed
+  // submit
+  var result = dorequest(url, null, null, [], item, method)
+  if (!result[0]) { synclog("dMI Error ({0})".format(result[1])); return false; }
+  // Check then update priceitem
+  ret = updatePrices(origcode);
+  if (!ret) { return false; }
+  return true;
 }
 
 function setupSync(categories) {
   // push total count back, then start for real...
-  postMessage({ type: "totalcount", data: countItems(categories) });
-
+  var totalcount = countItems(categories);
+  if (totalcount === false) { return; }
+  postMessage({ type: "totalcount", data: totalcount });
+  var running = true;
   for (const cat of categories.split(",")) {
     // for category iterate over it's items...
     if (!checkMemberCat(cat)) {
       // skip categories that don't have Member category
       continue;
     }
-    var params = [["ProductCategory", cat], ["Status", "A"]];
-    for (const item of apiIterator("/api/CsProduct", params)) {
-      // check if M suffix version exists...
-      if (itemMExists(prodProp(item, "ProductCode"))) {
-        // update with PUT
-        updateMItem(item);
-      } else {
-        // make new with POST
-        createMItem(item)
-      }
+    var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+    for (const item of apiIterator("/api/Item", params,
+        _i => {console.log("E: " + _i); running = false; }
+        )) {
+      // process store item
+      if (!doMemberItem(item)) { running = false; break; }
       incrementProcessed();
     }
+    if (!running) { break; }
   }
   doneAndReturn();
 }
