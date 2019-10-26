@@ -107,6 +107,7 @@ venv.bak/
 *.js[0-9].txt
 *.js.txt
 *.css.txt
+*.json.txt
 
 python/missing-all2.csv
 python/errors.txt
