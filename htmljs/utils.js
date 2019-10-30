@@ -145,3 +145,27 @@ function genSubEmailBody(id, email) {
   if (id) { body["imisid"] = id.toString(); }
   return body;
 }
+
+function genericProp(item, pname, pval=null) {
+  for (const prop of item["Properties"]["$values"])
+  {
+    if (prop["Name"] === pname) {
+      if (prop["Value"]["$type"]) {
+        if (pval !== null) { prop["Value"]["$value"] = pval; }
+        return prop["Value"]["$value"]
+      } else {
+        if (pval !== null) { prop["Value"] = pval; }
+        return prop["Value"]
+      }
+    }
+  }
+}
+function deleteGenericProp(pitem, pname) {
+  var newprops = [];
+  for (const prop of pitem["Properties"]["$values"]) {
+    if (prop["Name"] != pname) {
+      newprops.push(prop);
+    }
+  }
+  pitem["Properties"]["$values"] = newprops;
+}
