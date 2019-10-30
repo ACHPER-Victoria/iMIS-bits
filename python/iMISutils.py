@@ -448,3 +448,21 @@ def IterateOrgs():
         if r.status_code != 200:
             print("ERROR: "+ r.text)
             return
+
+def accessProperty(item, pname, pval=None):
+    for prop in item["Properties"]["$values"]:
+        if prop["Name"] == pname:
+            if isinstance(prop["Value"], dict):
+                if (pval is not None): prop["Value"]["$value"] = pval
+                return prop["Value"]["$value"]
+            else:
+                if (pval is not None): prop["Value"] = pval
+                return prop["Value"]
+
+def updateProperty(item, url):
+    iid = item["Identity"]["IdentityElements"]["$values"][0]
+    r = requests.put("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS, data=json.dumps(item))
+    if r.status_code != 200 and r.status_code != 201:
+        print(r.status_code, " - ", r.text)
+        return False
+    return True

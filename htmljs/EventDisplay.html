@@ -1,3 +1,13 @@
+<!-- Add this to the HEAD of your Event display RiSE page to hige the
+  "Edit Registration Info" link.
+-->
+<style>
+#ctl01_TemplateBody_WebPartManager1_gwpciEventDisplay_ciEventDisplay_RegistrantInfoSection {
+  visibility: hidden;
+  display: none;
+}
+</style>
+
 <!-- Add this to the HEAD of Event_display to display "Additional information" section as a subtitle  -->
 <script>
   function insertSpeaker(value){
@@ -24,7 +34,7 @@
   window.addEventListener("DOMContentLoaded", function() {
     setTimeout(function(){
           findAndInsert();
-      }, 500);
+      }, 100);
   });
 </script>
 
@@ -46,4 +56,13 @@ window.addEventListener("DOMContentLoaded", function() {
         hidePrice();
     }, 500);
 });
+</script>
+
+<!-- Redirect if conference page -->
+<script type="text/javascript">
+  window.addEventListener("DOMContentLoaded", _ => {
+    var id = (new URLSearchParams(window.location.search)).get("EventKey");
+    if (id == "2019CONF")
+      window.location.replace("https://achper.vic.edu.au/Conference/Home/Conference/Home.aspx?hkey=3b86a6d6-ec9c-4696-b045-a2d4bd06bb45&WebsiteKey=c64ad7ac-8359-41cb-b104-fa975c1e1e3a");
+  });
 </script>
