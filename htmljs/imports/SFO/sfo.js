@@ -75,8 +75,8 @@ function handleFiles(flist) {
 }
 FIELDS = [["ID", "oid"], ["Org Name", "orgname"], ["Type", "schooltype"],
   ["Sector", "sector"], ["Ranking No.", "rankingno"], ["School No.", "schoolno"],
-  ["Metro/Regional", "locality"],["Region", "region"], ["SFO %", "sfoperct"],
-  ["Sub Region", "subregion"]];
+  ["Metro/Regional", "locality"], ["Region", "region"], ["Suburb", "suburb"],
+  ["SFO %", "sfoperct"], ["Sub Region", "subregion"]];
 function handleFilesDone(headers) {
   var listelem = jQuery("#csvfields");
   FIELDS.forEach(function(i) {
@@ -109,6 +109,7 @@ function startProcessing() {
     "schoolno" : jQuery("#schoolno").val(),
     "locality" : jQuery("#locality").val(),
     "region" : jQuery("#region").val(),
+    "suburb" : jQuery("#suburb").val(),
     "sfoperct" : jQuery("#sfoperct").val(),
     "subregion" : jQuery("#subregion").val(),
   }

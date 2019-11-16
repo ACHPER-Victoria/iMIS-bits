@@ -41,19 +41,24 @@ function getUserFromID(id) {
   else { return null; }
 }
 function getOrgFromName(name) {
-  var params = [["limit", 1], ["Company", name.trim()], ["IsCompany", "true"]];
+  var params = [["limit", 1], ["Company", "eq:{0}".format(name.trim())], ["IsCompany", "true"]];
   var result = dorequest("/api/CsContact", null, null, params);
   if (result[0]) {
     if (result[1]["TotalCount"] > 1) {
       return false;
     } else if (result[1]["TotalCount"] < 1){
-      return null;
+      if (name.includes("-")) {
+        return getOrgFromName(name.replace("-", '\u2013'));
+      }
+      else {
+        return null;
+      }
     } else {
       return result[1]["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0];
     }
   }
   else {
-    importlog("G: Error ({0})".format(result[1]));
+    importlog("G: Error ({0}) {1}".format(name, result[1]));
     return null;
   }
 }
@@ -85,15 +90,15 @@ function updateOrgData(id, fields, row) {
   if (!result[0]) {
     // build data obj
     data = buildOrgData(id, values["locality"], values["region"],
-      values["schoolnumber"], values["schooltype"], values["sector"],
-      values["sfoperc"], values["sforank"], values["subregion"]);
+      values["schoolno"], values["schooltype"], values["sector"],
+      values["sfoperct"], values["rankingno"], values["subregion"]);
     method = "POST";
     url = url.slice(0, -4);
   } else {
     data = result[1];
     setOrgData(data, values["locality"], values["region"],
-      values["schoolnumber"], values["schooltype"], values["sector"],
-      values["sfoperc"], values["sforank"], values["subregion"]);
+      values["schoolno"], values["schooltype"], values["sector"],
+      values["sfoperct"], values["rankingno"], values["subregion"]);
     method = "PUT";
     url = url.format(id);
   }
@@ -116,8 +121,21 @@ function startProcessing(f, fields) {
       // blindly match orgname... figure out smarter way later...
       var id = null;
       var field = fields["orgname"];
-      if (field && r["data"][0][field].trim()) {
-        id = getOrgFromName(r["data"][0][field].trim())
+      if (!field) {
+        importlog("MISSING ORG NAME FIELD.");
+        return;
+      }
+      var orgname = r["data"][0][field].trim()
+      if (orgname) {
+        id = getOrgFromName(r["data"][0][field].trim());
+        // if null attempt to append the suburb
+        if (id === null || id === false) {
+          field = fields["suburb"];
+          if (field && r["data"][0][field].trim()) {
+            var suburb = r["data"][0][field].trim();
+            id = getOrgFromName("{0} - {1}".format(orgname, suburb));
+          }
+        }
       }
       // process ID if found
       if (id === null) {
@@ -150,6 +168,7 @@ function endProcessing(nf, nu, found) {
 }
 
 function getHeaders(f) {
+  if (!f) {return;}
   var rows = 0;
   var headers = null;
   Papa.parse(f, {
@@ -198,6 +217,26 @@ var ORGDATA = {
   "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
   "EntityTypeName": "AO_OrganisationsData",
   "PrimaryParentEntityTypeName": "Party",
+  "Identity": {
+  "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+  "EntityTypeName": "AO_OrganisationsData",
+  "IdentityElements": {
+      "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+      "$values": [
+        ""
+      ]
+    }
+  },
+  "PrimaryParentIdentity": {
+    "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+    "EntityTypeName": "Party",
+    "IdentityElements": {
+      "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+      "$values": [
+          ""
+      ]
+    }
+  },
   "Properties": {
     "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
     "$values": [
@@ -262,21 +301,24 @@ var ORGDATA = {
     ]
   }
 }
-function buildOrgData(id, locality, region, schoolnumber, schooltype, sector,
-  sfoperc, sforank, subregion) {
+function buildOrgData(id, locality, region, schoolno, schooltype, sector,
+  sfoperct, sforank, subregion) {
   var obj = JSON.parse(JSON.stringify(ORGDATA));
-  setOrgData(obj, locality, region, schoolnumber, schooltype, sector,
-    sfoperc, sforank, subregion);
+  obj["IdentityElements"]["$values"][0] = id
+  obj["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] = id
+  genericProp(obj, "ContactKey", id);
+  setOrgData(obj, locality, region, schoolno, schooltype, sector,
+    sfoperct, sforank, subregion);
   return obj;
 }
-function setOrgData(obj, locality, region, schoolnumber, schooltype, sector,
-  sfoperc, sforank, subregion) {
+function setOrgData(obj, locality, region, schoolno, schooltype, sector,
+  sfoperct, sforank, subregion) {
   if (locality !== null) { genericProp(obj, "Locality", locality.toUpperCase()); }
-  if (region !== null) { genericProp(obj, "Region", region.toUpperCase(); }
-  if (schoolnumber !== null) { genericProp(obj, "SchoolNumber", schoolnumber); }
+  if (region !== null) { genericProp(obj, "Region", region.toUpperCase()); }
+  if (schoolno !== null) { genericProp(obj, "SchoolNumber", schoolno); }
   if (schooltype !== null) { genericProp(obj, "SchoolType", schooltype.toUpperCase()); }
   if (sector !== null) { genericProp(obj, "Sector", sector.toUpperCase()); }
-  if (sfoperc !== null) { genericProp(obj, "SFOPercentage", sfoperc); }
+  if (sfoperct !== null) { genericProp(obj, "SFOPercentage", sfoperct); }
   if (sforank !== null) { genericProp(obj, "SFORanking", parseInt(sforank, 10)); }
   if (subregion !== null) { genericProp(obj, "SubRegion", subregion); }
 }
