@@ -169,3 +169,26 @@ function deleteGenericProp(pitem, pname) {
   }
   pitem["Properties"]["$values"] = newprops;
 }
+
+REGISTRATION_BODY = {
+    "$type": "Asi.Soa.Events.DataContracts.EventRegistrationRequest, Asi.Contracts",
+    "EntityTypeName": "EventRegistration",
+    "OperationName": "RegisterEvent",
+    "RegistrationType": 3,
+    "EventId": "",
+    "RegistrationOptionFunctionId": "",
+    "FunctionId": "",
+    "RegistrantId": "",
+    "RegisteredBy": "149",
+    "BillTo": "",
+    "Waitlist": false
+}
+function genRegistration(eventid, regoptid, id) {
+  body = JSON.parse(JSON.stringify(REGISTRATION_BODY));
+  body["EventId"] = eventid;
+  body["RegistrationOptionFunctionId"] = "{0}/{1}".format(eventid, regoptid);
+  body["FunctionId"] = regoptid;
+  body["RegistrantId"] = id;
+  body["BillTo"] = id;
+  return body;
+}

@@ -1,0 +1,32 @@
+<script src="/common/Uploaded%20files/Code/registeralliance/registeralliance.js"></script>
+<style>.addtopalign { vertical-align: top; }</style>
+
+<h1>Register all in alliance(s)</h1>
+<h2>WARNING: DISABLE EVENT CONFIRMATIONS.</h2>
+<h3>Also probably want to make sure these functions are 0 cost.</h3>
+<a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
+<p>Event (will only show Pending events): <br>
+  <select id="EventPullDown" size="8">
+    <option value="">(None)</option>
+  </select>
+</p>
+<p>Registration Option: <br>
+  <select id="RegOptionPullDown">
+    <option value="">(None)</option>
+  </select>
+</p>
+<p>Add people in these Alliances: <br>
+  <select id="IncAlliancePullDown" size="8" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+<p>Exclude people from these alliances: <br>
+  <select id="ExcAlliancePullDown" size="20" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Processing</a>
+<p>Progress: <span id="mergecount"></span>/<span id="mergetotal"></span></p>
+<p>Messages</p>
+<textarea id="mergelog" rows="25" cols="100" style="width: 40em;"></textarea>
