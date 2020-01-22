@@ -9,6 +9,10 @@ if (!String.prototype.format) {
     });
   };
 }
+const rsplit = function(source, sep, maxsplit) {
+      var split = source.split(sep);
+      return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
+  };
 
 var token = "";
 
@@ -36,6 +40,11 @@ onmessage = function(e) {
 }
 
 function getUserFromID(id) {
+  var result = dorequest("/api/CsContact/{0}".format(id));
+  if (result[0]) { return id; }
+  else { return null; }
+}
+function getOrgFromID(id) {
   var result = dorequest("/api/CsContact/{0}".format(id));
   if (result[0]) { return id; }
   else { return null; }
@@ -118,22 +127,51 @@ function startProcessing(f, fields) {
   Papa.parse(f, {
     "header": true,
     "step": function(r,p) {
-      // blindly match orgname... figure out smarter way later...
       var id = null;
-      var field = fields["orgname"];
-      if (!field) {
-        importlog("MISSING ORG NAME FIELD.");
-        return;
-      }
-      var orgname = r["data"][0][field].trim()
-      if (orgname) {
-        id = getOrgFromName(r["data"][0][field].trim());
-        // if null attempt to append the suburb
-        if (id === null || id === false) {
-          field = fields["suburb"];
-          if (field && r["data"][0][field].trim()) {
-            var suburb = r["data"][0][field].trim();
-            id = getOrgFromName("{0} - {1}".format(orgname, suburb));
+      // iMIS ID available. Only process iMIS ID rows...
+      if (fields["oid"]) {
+        var field = fields["oid"];
+        var imisid = r["data"][0][field].trim()
+        if (imisid) {
+          id = getOrgFromID(imisid);
+        }
+      } else {
+        // blindly match orgname... figure out smarter way later...
+        var field = fields["orgname"];
+        if (!field) {
+          importlog("MISSING ORG NAME FIELD.");
+          return;
+        }
+        var orgname = r["data"][0][field].trim()
+        if (orgname) {
+          orgname = orgname.replace("  ", " ");
+          id = getOrgFromName(r["data"][0][field].trim());
+          // if not found attempt to append the suburb
+          if (id === null || id === false) {
+            field = fields["suburb"];
+            if (field && r["data"][0][field].trim()) {
+              var suburb = r["data"][0][field].trim();
+              id = getOrgFromName("{0} - {1}".format(orgname, suburb));
+              // If still not found, try adding "Campus" to the end...
+              if (id === null || id === false) { id = getOrgFromName("{0} - {1} Campus".format(orgname, suburb)); }
+            }
+          }
+          // If still not found, try variants: +" Incorporated"
+          if (id === null || id === false) {
+            id = getOrgFromName("{0} {1}".format(orgname, "Incorporated"));
+          }
+          // If still not found, take off the last word and insert a hyphen in there. (then try 2 words)
+          if (id === null || id === false) {
+            var namesplit = rsplit(orgname, " ", 1);
+            id = getOrgFromName("{0} - {1}".format(namesplit[0], namesplit[1]));
+            if (id === null || id === false) {
+              var namesplit = rsplit(orgname, " ", 2);
+              id = getOrgFromName("{0} - {1}".format(namesplit[0], namesplit.slice(1).join(" ")));
+            }
+          }
+          // try replace "Grammar" with "Grammar School"
+          if ((id === null || id === false) && orgname.includes("Grammar") && !orgname.includes("Grammar School")) {
+            id = getOrgFromName(orgname.replace("Grammar", "Grammar School"));
           }
         }
       }
@@ -218,9 +256,9 @@ var ORGDATA = {
   "EntityTypeName": "AO_OrganisationsData",
   "PrimaryParentEntityTypeName": "Party",
   "Identity": {
-  "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
-  "EntityTypeName": "AO_OrganisationsData",
-  "IdentityElements": {
+    "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+    "EntityTypeName": "AO_OrganisationsData",
+    "IdentityElements": {
       "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
       "$values": [
         ""
@@ -304,7 +342,7 @@ var ORGDATA = {
 function buildOrgData(id, locality, region, schoolno, schooltype, sector,
   sfoperct, sforank, subregion) {
   var obj = JSON.parse(JSON.stringify(ORGDATA));
-  obj["IdentityElements"]["$values"][0] = id
+  obj["Identity"]["IdentityElements"]["$values"][0] = id
   obj["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] = id
   genericProp(obj, "ContactKey", id);
   setOrgData(obj, locality, region, schoolno, schooltype, sector,
@@ -319,6 +357,8 @@ function setOrgData(obj, locality, region, schoolno, schooltype, sector,
   if (schooltype !== null) { genericProp(obj, "SchoolType", schooltype.toUpperCase()); }
   if (sector !== null) { genericProp(obj, "Sector", sector.toUpperCase()); }
   if (sfoperct !== null) { genericProp(obj, "SFOPercentage", sfoperct); }
-  if (sforank !== null) { genericProp(obj, "SFORanking", parseInt(sforank, 10)); }
+  if (sforank !== null) {
+    if (!isNaN(sforank)) { genericProp(obj, "SFORanking", parseInt(sforank, 10)); }
+  }
   if (subregion !== null) { genericProp(obj, "SubRegion", subregion); }
 }

@@ -11,6 +11,7 @@ if (!String.prototype.format) {
 }
 
 importScripts('/common/Uploaded%20files/Code/papaparse.min.js')
+importScripts('/common/Uploaded%20files/Code/utils.js')
 
 var eventid = null;
 var token = null;
@@ -48,23 +49,6 @@ function exportlog(s) {
     type: "exportlog",
     data: s,
   });
-}
-
-function dorequest(url, func, errfunc = null) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, false);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('RequestVerificationToken', token);
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      func(JSON.parse(xhr.responseText));
-    }
-    else {
-      if (errfunc) { errfunc(xhr.responseText); }
-      else { exportlog("Request error ({0}). {1}".format(url, xhr.responseText)); }
-    }
-  };
-  xhr.send();
 }
 
 function runReport() {
@@ -111,32 +95,55 @@ function addInvoiceDetails(ref, rfperson) {
   return num;
 }
 
+// "Locality", "Region", "Sector", "SchoolNumber", "SchoolType", "SFOPercentage",
+// "SFORanking", "SubRegion",
 function addExOrgData(rfperson, ORGDATA, orgid) {
   if (ORGDATA[orgid]) {
-    //rfperson["Sector"] = ORGDATA[orgid]["Sector"];
+    rfperson["OrgPostCode"] = ORGDATA[orgid]["OrgPostCode"];
+    rfperson["Locality"] = ORGDATA[orgid]["Locality"];
     rfperson["Region"] = ORGDATA[orgid]["Region"];
+    rfperson["Sector"] = ORGDATA[orgid]["Sector"];
     rfperson["SchoolNumber"] = ORGDATA[orgid]["SchoolNumber"];
-    rfperson["SFOifApplicable"] = ORGDATA[orgid]["SFOifApplicable"];
+    rfperson["SchoolType"] = ORGDATA[orgid]["SchoolType"];
+    rfperson["SFOPercentage"] = ORGDATA[orgid]["SFOPercentage"];
+    rfperson["SFORanking"] = ORGDATA[orgid]["SFORanking"];
+    rfperson["SubRegion"] = ORGDATA[orgid]["SubRegion"];
   } else {
     ORGDATA[orgid] = {};
+    dorequest("/api/CsContact/{0}".format(orgid), function(data) {
+        data["Properties"]["$values"].forEach(function(pdata) {
+          if (pdata["Name"] == "Zip") { rfperson["OrgPostCode"] = ORGDATA[orgid]["OrgPostCode"] = pdata["Value"]; }
+        });
+    });
     dorequest("/api/AO_OrganisationsData/{0}".format(orgid), function(data) {
         data["Properties"]["$values"].forEach(function(pdata) {
-          if (pdata["Name"] == "Region") { rfperson["Region"] = ORGDATA[orgid]["Region"] = pdata["Value"]; }
+          if (pdata["Name"] == "Locality") { rfperson["Locality"] = ORGDATA[orgid]["Locality"] = pdata["Value"]; }
+          else if (pdata["Name"] == "Region") { rfperson["Region"] = ORGDATA[orgid]["Region"] = pdata["Value"]; }
+          else if (pdata["Name"] == "Sector") { rfperson["Sector"] = ORGDATA[orgid]["Sector"] = pdata["Value"]; }
           else if (pdata["Name"] == "SchoolNumber") { rfperson["SchoolNumber"] = ORGDATA[orgid]["SchoolNumber"] = pdata["Value"]; }
-          else if (pdata["Name"] == "SFOifApplicable") { rfperson["SFOifApplicable"] = ORGDATA[orgid]["SFOifApplicable"] = pdata["Value"]; }
+          else if (pdata["Name"] == "SchoolType") { rfperson["SchoolType"] = ORGDATA[orgid]["SchoolType"] = pdata["Value"]; }
+          else if (pdata["Name"] == "SFOPercentage") { rfperson["SFOPercentage"] = ORGDATA[orgid]["SFOPercentage"] = pdata["Value"]; }
+          else if (pdata["Name"] == "SFORanking") {
+            var val = "";
+            if (pdata["Value"]["$value"] > 0) { val = pdata["Value"]["$value"]; }
+            rfperson["SFORanking"] = ORGDATA[orgid]["SFORanking"] = val;
+          }
+          else if (pdata["Name"] == "SubRegion") { rfperson["SubRegion"] = ORGDATA[orgid]["SubRegion"] = pdata["Value"]; }
         });
     });
   }
 }
-function addExSector(rfperson) {
+
+function addExPersonData(rfperson) {
   dorequest("/api/AO_IndividualsData/{0}".format(rfperson["Id"]), function(data) {
       data["Properties"]["$values"].forEach(function(pdata) {
-        if (pdata["Name"] == "Sector") { rfperson["Sector"] = pdata["Value"]; }
+        if (pdata["Name"] == "HPETeachLevel") { rfperson["HPETeachLevel"] = pdata["Value"]; }
       });
   }, function(data) {}); // errfunc do nothing.
 }
 
 function addFormResponses(rfperson, FORMDEF) {
+  if (!FORMDEF["_"]) { return; }
   dorequest("/api/FormResponse?FormDefinitionId={0}&ParticipantPartyId={1}".format(FORMDEF["_"], rfperson["Id"]),
     function(data) {
       data["Items"]["$values"].forEach(function(di) {
@@ -196,8 +203,8 @@ function populateRegistration(rfperson, conflicttable, sessionblocks, ORGDATA, F
       // Registration Date
       rfperson["RegistrationDate"] = data["RegistrationDate"];
 
-      // temporarily get Sector from contact card
-      addExSector(rfperson);
+      // add ex person data
+      addExPersonData(rfperson);
 
       // iterate over extra Data
       data["Registrant"]["AdditionalAttributes"]["$values"].forEach(function(exdata) {
@@ -231,7 +238,7 @@ function startProcessingEvent(data) {
   var ORGDATA = {};
   var FORMDEF = {};
   var count = 0;
-  buildFormDef(FORMDEF, data["EventFormId"]);
+  if (data["EventFormId"]) { buildFormDef(FORMDEF, data["EventFormId"]); }
   var regoptions = {};
   data["Functions"]["$values"].forEach(function(item) {
     // check if contains digit, ignore if so
@@ -245,36 +252,36 @@ function startProcessingEvent(data) {
   // iterate over registration options
   data["RegistrationOptions"]["$values"].forEach(function(item) {
     regoptions[item["EventFunctionId"]] = item["Name"]
-    dorequest("/api/vCsRegFunctions?ProductCode={0}&limit=300".format(item["EventFunctionId"]),
-      function(regfuncdata) {
-        regfuncdata["Items"]["$values"].forEach(function(rfi) {
-          var rfperson = {};
-          rfperson["RegistrationOption"] = item["Name"];
-          rfi["Properties"]["$values"].forEach(function(rfip) {
-            if (rfip["Name"] == "Status") {
-              if (rfip["Value"]) { rfperson["Status"] = rfip["Value"]; }
-              else { rfperson["Status"] = ""; }
-            }
-            else if (rfip["Name"] == "BillToId") { rfperson["BillTo"] = getName(rfip["Value"]); }
-            //else if (rfip["Name"] == "ExtendedAmount") { rfperson["Amount"] = rfip["Value"]["$value"]; }
-            else if (rfip["Name"] == "OrderNumber") {
-              rfperson["OrderNumber"] = rfip["Value"]["$value"];
-              addInvoiceDetails(rfip["Value"]["$value"], rfperson);
-            }
-            else if (rfip["Name"] == "ShipToId") { rfperson["Id"] = rfip["Value"]; }
-          });
-          // Now we have some basic info, get all registration information:
-          populateRegistration(rfperson, conflicttable, sessionblocks, ORGDATA, FORMDEF);
-          REGISTRATIONS.push(rfperson);
-          count++;
-          postMessage({type: "exportprogress", data: count,});
-        });
-    });
+    var params = [["ProductCode", item["EventFunctionId"]]];
+    for(const rfi of apiIterator("/api/vCsRegFunctions", params)) {
+      var rfperson = {};
+      rfperson["RegistrationOption"] = item["Name"];
+      rfi["Properties"]["$values"].forEach(function(rfip) {
+        if (rfip["Name"] == "Status") {
+          if (rfip["Value"]) { rfperson["Status"] = rfip["Value"]; }
+          else { rfperson["Status"] = ""; }
+        }
+        else if (rfip["Name"] == "BillToId") { rfperson["BillTo"] = getName(rfip["Value"]); }
+        //else if (rfip["Name"] == "ExtendedAmount") { rfperson["Amount"] = rfip["Value"]["$value"]; }
+        else if (rfip["Name"] == "OrderNumber") {
+          rfperson["OrderNumber"] = rfip["Value"]["$value"];
+          addInvoiceDetails(rfip["Value"]["$value"], rfperson);
+        }
+        else if (rfip["Name"] == "ShipToId") { rfperson["Id"] = rfip["Value"]; }
+      });
+      // Now we have some basic info, get all registration information:
+      populateRegistration(rfperson, conflicttable, sessionblocks, ORGDATA, FORMDEF);
+      REGISTRATIONS.push(rfperson);
+      count++;
+      postMessage({type: "exportprogress", data: count,});
+    }
   });
   // build Fields
   var fields = ["Prefix", "FirstName", "LastName", "Organisation", "Title", "Email",
-    "Mobile", "Id", "RegistrationDate", "RegistrationOption", "Status", "Region", "Sector",
-    "SchoolNumber", "SFOifApplicable", "MemberType", "BillTo", "Amount", "Balance",
+    "Mobile", "Id", "HPETeachLevel", "RegistrationDate", "RegistrationOption", "Status",
+    "Locality", "Region", "Sector", "SchoolNumber", "SchoolType", "SFOPercentage",
+    "SFORanking", "SubRegion", "OrgPostCode",
+    "MemberType", "BillTo", "Amount", "Balance",
     "PONumber", "InvoiceNumber", "OrderNumber" ]
   // Add sessions and form questions
   sessionblocks.sort();
