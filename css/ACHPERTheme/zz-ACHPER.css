@@ -1,0 +1,877 @@
+body{
+    font-family:Open Sans;
+    font-size:16px;
+}
+
+a, .Link {
+    color: #0255a3;
+    text-decoration: underline;
+}
+
+a:visited, .Link:visited {
+    color: #0255a3;
+}
+
+h1, .h1, .PageTitle, h2, .h2, .PanelTitle {
+    font-family:Open Sans;
+    font-weight: 400;
+    color: #000;
+}
+
+h1, .h1, .PageTitle {
+    font-size: 36px;
+    font-weight:700;
+}
+
+.carousel h1, .carousel h2, .carousel h3, .carousel h4, .carousel h5 {
+    font-family:Open Sans;
+    font-weight: bold;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+
+}
+
+h2, .h2, .PanelTitle {
+    line-height: 1.45em;
+    font-size: 28px;
+    font-weight:bold;
+    border:0px;
+}
+
+h3, .h3, .SectionTitle {
+    font-size: 28px;
+    font-weight:500;
+}
+
+h3 a.highlight{
+    text-decoration:none;
+    font-weight:bold;
+}
+
+h3 a.highlight.blue{
+    color:#26a9e1;
+}
+
+h3 a.highlight.purple{
+    color:#662f90;
+}
+
+h4, .h4, .SectionLabel {
+    font-size: 28px;
+    font-weight:bold;
+    color:#26a9e1;
+}
+
+h5, .h5 {
+    font-size: 18px;
+    font-weight:bold;
+    color:#662f90;
+    line-height: 1.6;
+}
+
+h6, .h6 {
+    font-size: 18px;
+    font-weight:bold;
+    color:#f79520;
+    line-height: 1.6;
+}
+
+/*Buttons*/
+.btn, .TextButton, .TextButtonWithImage, .ruButton, #masterHeaderActionArea a, .RadGrid input.TextButton {
+    color: #fff;
+    background-color: #26a9e1;
+    border-color: transparent;
+    font-size:18px;
+    font-weight:600;
+    padding: 5px 15px;
+}
+
+.btn:hover, .btn:focus, .btn:active, .btn:visited, .TextButton:hover, .TextButton:focus, .TextButton:active, .TextButton:visited, .TextButtonWithImage:hover, .TextButtonWithImage:focus, .TextButtonWithImage:active, .TextButtonWithImage:visited, .ruButton:hover, .ruButton:focus, .ruButton:active, .ruButton:visited, #masterHeaderActionArea a:hover, #masterHeaderActionArea a:focus, #masterHeaderActionArea a:active, #masterHeaderActionArea a:visited, .RadGrid input.TextButton:hover, .RadGrid input.TextButton:focus, .RadGrid input.TextButton:active, .RadGrid input.TextButton:visited {
+    color: #fff;
+    background-color: #0255a3;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+
+.PrimaryButton, .SaveAndClose, .SaveAs, .UsePrimaryButton .TextButton, .UsePrimaryButton .TextButtonWithImage, #masterHeaderActionArea a, .RadGrid input.PrimaryButton {
+    color: #fff;
+    background-color: #f79520;
+    border-color: transparent;
+}
+
+.PrimaryButton:hover, .PrimaryButton:focus, .PrimaryButton:active, .PrimaryButton:visited, .SaveAndClose:hover, .SaveAndClose:focus, .SaveAndClose:active, .SaveAndClose:visited, .SaveAs:hover, .SaveAs:focus, .SaveAs:active, .SaveAs:visited, .UsePrimaryButton .TextButton:hover, .UsePrimaryButton .TextButton:focus, .UsePrimaryButton .TextButton:active, .UsePrimaryButton .TextButton:visited, .UsePrimaryButton .TextButtonWithImage:hover, .UsePrimaryButton .TextButtonWithImage:focus, .UsePrimaryButton .TextButtonWithImage:active, .UsePrimaryButton .TextButtonWithImage:visited, #masterHeaderActionArea a:hover, #masterHeaderActionArea a:focus, #masterHeaderActionArea a:active, #masterHeaderActionArea a:visited, .RadGrid input.PrimaryButton:hover, .RadGrid input.PrimaryButton:focus, .RadGrid input.PrimaryButton:active, .RadGrid input.PrimaryButton:visited {
+    color: #fff;
+    background-color: #b66d29;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.ThirdButton,
+.ThirdButton:visited{
+    background-color: #662f90;
+}
+
+.ThirdButton:hover,
+.ThirdButton:focus{
+    background-color: #2e1851;
+}
+
+.clearQ .rgHeader{
+	display:none!important;
+}
+
+.clearQ .RadGrid_MetroTouch{
+	border:none;
+}
+
+.clearQ .RadGrid_MetroTouch .rgAltRow {
+    background: #fff;
+}
+
+.clearQ .RadGrid_MetroTouch .rgAltRow td,
+.clearQ .RadGrid_MetroTouch .rgRow td {
+    border:none;
+}
+
+
+.clearQ .RadGrid.RadGrid_MetroTouch .rgMasterTable .rgSelectedCell,
+.clearQ .RadGrid.RadGrid_MetroTouch .rgSelectedRow,
+.clearQ .RadGrid.RadGrid_MetroTouch td.rgEditRow .rgSelectedRow,
+.clearQ .RadGrid.RadGrid_MetroTouch .rgSelectedRow td.rgSorted,
+.clearQ .RadGrid.RadGrid_MetroTouch th.rgSorted,
+.clearQ .RadGrid.RadGrid_Metro .rgMasterTable .rgSelectedCell,
+.clearQ .RadGrid.RadGrid_Metro .rgSelectedRow,
+.clearQ .RadGrid.RadGrid_Metro td.rgEditRow .rgSelectedRow,
+.clearQ .RadGrid.RadGrid_Metro .rgSelectedRow td.rgSorted,
+.clearQ .RadGrid.RadGrid_Metro th.rgSorted {
+    background-color: transparent;
+    border-color:transparent;
+}
+
+.clearQ .RadGrid.RadGrid_MetroTouch .rgMasterTable .rgSelectedCell a,
+.clearQ .RadGrid.RadGrid_MetroTouch .rgSelectedRow a,
+.clearQ .RadGrid.RadGrid_MetroTouch td.rgEditRow .rgSelectedRow a,
+.clearQ .RadGrid.RadGrid_MetroTouch .rgSelectedRow td.rgSorted a,
+.clearQ .RadGrid.RadGrid_MetroTouch th.rgSorted a,
+.clearQ .RadGrid.RadGrid_Metro .rgMasterTable .rgSelectedCell a,
+.clearQ .RadGrid.RadGrid_Metro .rgSelectedRow a,
+.clearQ .RadGrid.RadGrid_Metro td.rgEditRow .rgSelectedRow a,
+.clearQ .RadGrid.RadGrid_Metro .rgSelectedRow td.rgSorted a,
+.clearQ .RadGrid.RadGrid_Metro th.rgSorted a {
+    color: transparent!important;
+}
+
+.clearQ .RadGrid.RadGrid_MetroTouch .rgMasterTable,
+.clearQ .RadGrid.RadGrid_Metro .rgMasterTable {
+    background-color: transparent!important;
+}
+
+
+@media (min-width: 992px){
+.has-secondary-col.col-on-right .col-primary {
+    float: right;
+    margin-right: 0%;
+    margin-left: 2%;
+}
+}
+/***HEADER****/
+
+.header-container {
+    max-width: initial;
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+#masterHeaderBackground, .header {
+    border-bottom: 0px;
+}
+
+.header-logo-container {
+    float: left;
+    margin-top: 10px;
+}
+
+#masterLogoArea img{
+    max-width:550px!important;
+}
+
+@media(max-width:767px){
+    #masterLogoArea img{
+        max-width:250px!important;
+    }
+
+    .header-logo-container {
+        float: none;
+        text-align:center;
+        margin-bottom:20px;
+        margin-top:0px;
+    }
+
+}
+
+/*Aux menu*/
+
+@media (min-width: 768px){
+    .nav-auxiliary .NavigationListItem, .nav-auxiliary .header-social .SocialSprite {
+        margin-left: 0px;
+    }
+
+    .header-search {
+        padding: 0 0 0 7.5px;
+    }
+}
+
+.NavigationLink {
+    padding-left: 7.5px;
+    padding-right: 7.5px;
+    white-space: nowrap;
+}
+
+.UtilitySection.UtilityAuthentication{
+    border-right:1px solid #000;
+    padding:0px 7.5px;
+    margin-top: 2px;
+}
+
+.UtilitySection.UtilityAuthentication a,
+.UtilitySection.UtilityAuthentication a:visited{
+    text-decoration:none;
+    color:#000;
+    text-transform:uppercase;
+    font-weight:600;
+}
+
+.UtilitySection.UtilityAuthentication a:hover,
+.UtilitySection.UtilityAuthentication a:focus{
+    text-decoration:underline;
+}
+
+.UtilityNavigationList .NavigationUnorderedList > li > a,
+.UtilityNavigationList .NavigationUnorderedList > li > a:visited {
+    display: inline-block;
+    text-decoration:none;
+    color:#000;
+    text-transform:uppercase;
+    font-weight:600;
+    border-right:1px solid #000;
+}
+
+.UtilityNavigationList .NavigationUnorderedList > li > a:hover,
+.UtilityNavigationList .NavigationUnorderedList > li > a:focus{
+    text-decoration:underline;
+}
+
+@media(max-width:767px){
+    .UtilityNavigationList .NavigationUnorderedList > li:last-child > a {
+        border-right:0px;
+    }
+
+    .UtilitySection.UtilityAuthentication {
+        margin-left:0px;
+    }
+
+    .navbar-header {
+        float: none;
+        text-align: center;
+    }
+
+}
+
+/*Search*/
+
+.UtilitySearch{
+    margin-left: 0px;
+}
+
+.header-search input[type="text"]{
+    display: inline-block;
+    height: 37px;
+    padding: 6px 10px 5px 10px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #000;
+    border:0px;
+    width: 95px!important;
+    border-radius: 0;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    text-transform:uppercase;
+    font-weight:600;
+    -webkit-transition:all linear 0.2s;
+    transition:all linear 0.2s;
+}
+
+.header-search input[type="text"]:focus{
+    width:200px!important;
+}
+
+.header-search .search-field {
+    background: #fff url(images/search.svg) no-repeat;
+    background-position: left 10px;
+    padding-left: 24px !important;
+    color: #777;
+    border-color: #CCC;
+    background-size:18px;
+}
+
+@media(max-width:767px){
+    .header-search input[type="text"]{
+        border:1px solid #000;
+    }
+
+    .header-search .search-field {
+        background-position: 10px 10px;
+        padding-left: 40px !important;
+    }
+}
+
+/***PRIMARY MENU***/
+/*root*/
+.RadMenu.RadMenu_Austin .rmRootGroup > .rmItem > .rmLink {
+    text-transform: uppercase;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 0;
+}
+
+.RadMenu.RadMenu_Austin .rmLink, .RadMenu.RadMenu_Austin .rsmLink {
+    color: #26a9e1;
+    text-decoration: none;
+    display: block;
+    position: relative;
+}
+
+/*root hover*/
+.RadMenu.RadMenu_Austin .rmRootLink.rmExpanded, .RadMenu.RadMenu_Austin .rmRootLink:hover, .RadMenu.RadMenu_Austin .rmRootLink.rmFocused {
+    background-color: #26a9e1;
+    color: #fff;
+}
+
+/*root selected*/
+.RadMenu.RadMenu_Austin .rmRootLink.rmSelected {
+    color: #fff;
+    background-color: #26a9e1;
+}
+
+/*dropwdown bg*/
+.RadMenu.RadMenu_Austin .rmGroup {
+    background-color: #26a9e1;
+}
+/*children*/
+.RadMenu.RadMenu_Austin .rmSlide .rmLink {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    position: relative;
+}
+
+.RadMenu_Austin .rmSlide .rmLink:hover, .RadMenu_Austin .rmSlide .rmLink.rmFocused, .RadMenu_Austin .rmSlide .rsmLink:hover, .RadMenu_Austin .rmSlide .rsmLink.rmFocused, .RadMenu_Austin .rmSlide .rsmTwoLevels > .rsmItem > .rsmLink:hover, .RadMenu_Austin .rmSlide .rsmTwoLevels > .rsmItem > .rsmLink.rmFocused {
+    background-color: transparent;
+    color: #000;
+}
+
+.RadMenu_Austin .rmSlide .rmExpandRight, .RadMenu_Austin .rmSlide .rmGroup a.rmLink.rmExpandRight {
+    background-image: url(images/ResponsiveNav.png);
+    background-position: 105% -200px;
+    background-repeat: no-repeat;
+}
+
+/*mobile*/
+
+.navbar-toggle.collapsed,
+.navbar-toggle,
+.navbar-toggle:hover,
+.navbar-toggle:focus {
+    background-color: #26a9e1;
+}
+
+.searchbar-collapse {
+    margin-left: 0px;
+     background-color: #fff;
+}
+
+.navbar-collapse{
+    background-color: #fff;
+}
+
+@media(max-width:767px){
+    /*add lines*/
+    .RadMenu.RadMenu_Austin .rmRootGroup > .rmItem > .rmLink {
+        border:1px solid #26a9e1;
+        border-bottom:0px;
+    }
+
+    .RadMenu.RadMenu_Austin .rmRootGroup > .rmItem.rmLast > .rmLink {
+        border-bottom:1px solid #26a9e1;
+    }
+
+    /*fix secondary items*/
+    .RadMenu .rmVertical .rmItem .rmText {
+        display: inline-block!important;
+        float: none;
+        width: 70%;
+        background: none;
+    }
+
+    .RadMenu_Austin .rmSlide .rmSlide {
+        left: 0 !important;
+        margin-top: 140px;
+    }
+
+    .RadMenu.RadMenu_Austin .rmGroup.rmLevel2 {
+        background-color: #0255a3;
+    }
+
+    .RadMenu.RadMenu_Austin .rmLink:hover .rmToggle > .rmIcon,
+    .RadMenu.RadMenu_Austin .rmLink.rmFocused .rmToggle > .rmIcon{
+        transform: rotate( -180deg );
+    }
+}
+
+/***SECONDARY MENU***/
+
+.nav-secondary .sub-nav-head {
+    background-color: #26a9e1;
+    color: #fff;
+    font-weight: bold;
+    font-size:20px;
+    padding: 10px 15px;
+    text-align:center;
+    text-transform:uppercase;
+}
+
+.nav-secondary {
+    background-color: #fff;
+    margin-bottom: 0px;
+}
+
+.RadTreeView.RadTreeView_Austin > .rtUL > .rtLI {
+    border: 1px solid #cfcfcf;
+    border-top: 0px!important;
+}
+
+.RadTreeView.RadTreeView_Austin > .rtUL {
+    margin: 0px;
+}
+
+.RadTreeView.RadTreeView_Austin a.rtIn {
+    color: #000;
+    font-weight: 600!important;
+    -webkit-transition: all 0.2s ease-in;
+    transition: all 0.2s ease-in;
+    margin: 0;
+}
+
+.RadTreeView.RadTreeView_Austin a.rtIn:hover, .RadTreeView.RadTreeView_Austin a.rtIn:focus, .RadTreeView.RadTreeView_Austin a.rtIn:active {
+    background-color: #eaeaea;
+}
+
+.RadTreeView.RadTreeView_Austin .rtSelected > a.rtIn, .RadTreeView.RadTreeView_Austin .child-is-selected.rtIn {
+    background-color: transparent;
+    color: #26a9e1;
+}
+
+.RadTreeView.RadTreeView_Austin .rtLI, .RadTreeView.RadTreeView_Austin .rtTop, .RadTreeView.RadTreeView_Austin .rtMid, .RadTreeView.RadTreeView_Austin .rtBot {
+    padding: 0;
+    position: relative;
+}
+
+.RadTreeView.RadTreeView_Austin .rtSp,
+.RadTreeView.RadTreeView_Austin .rtPlus,
+.RadTreeView.RadTreeView_Austin .rtMinus {
+    display: block;
+    float: right;
+    margin: 0px;
+    height: 100%;
+    width: 30px;
+    right: 0;
+    position: absolute;
+    background-position:center;
+    background-size:13px;
+}
+
+.RadTreeView.RadTreeView_Austin .rtPlus{
+    background-image:url(images/plus-solid.svg);
+}
+
+.RadTreeView.RadTreeView_Austin .rtMinus{
+    background-image:url(images/minus-solid.svg);
+}
+
+.RadTreeView.RadTreeView_Austin > .rtUL > .rtLI > .rtUL {
+    padding: 0px;
+}
+
+.RadTreeView.RadTreeView_Austin > .rtUL > .rtLI .rtLI .rtIn {
+    padding: 5px 25px;
+    font-weight:normal!important;
+}
+
+
+/***HOMEPAGE***/
+
+.HomePageFullWidthArea .panel-body,
+.HomePageFullWidthArea .PanelBody {
+    padding: 0px;
+}
+
+.HomePageFullWidthArea .panel,
+.HomePageFullWidthArea .StandardPanel {
+    border:0px;
+}
+
+.carousel-control.left,
+.carousel-control.right{
+    display:none;
+}
+
+.carousel-caption {
+    text-shadow: #000 0px 0px 4px;
+    left: 10%;
+    right: 10%;
+}
+
+.carousel-caption span{
+    display: inline-block;
+    vertical-align: middle;
+    line-height: normal;
+}
+
+.carousel-indicators li {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin: 3px;
+}
+
+.carousel-indicators .active {
+    margin: 3px;
+    width: 15px;
+    height: 15px;
+}
+
+.carousel-inner.bg-img > .item {
+  background-position: top left;
+}
+
+.carousel-inner.bg-img > .item:after{
+    display:block;
+    content:"";
+    left:0; right:0; top:0; bottom:0;
+    position:absolute;
+    /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#000000+0,000000+100&0.6+0,0+100 */
+    background: -moz-linear-gradient(top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top, rgba(0,0,0,0.6) 0%,rgba(0,0,0,0) 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%,rgba(0,0,0,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#99000000', endColorstr='#00000000',GradientType=0 ); /* IE6-9 */
+}
+
+@media (min-width: 768px){
+    .carousel-indicators {
+        bottom: 0px;
+    }
+}
+
+.Wrapper-HomePage .container{
+    max-width: initial;
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.Wrapper-HomePage .row{
+    max-width:1170px;
+    margin:0px auto;
+}
+
+.Wrapper-HomePage .row.full{
+    max-width: initial;
+    margin: 40px 0px;
+}
+
+.Wrapper-HomePage .grey{
+    background-color:#eaeaea;
+    padding: 20px 0px;
+}
+
+.Wrapper-HomePage .row.full .content{
+    max-width:1170px;
+    margin:0px auto;
+}
+
+.cta{
+    text-align:center;
+    font-size:22px;
+    text-transform:uppercase;
+    font-weight:bold;
+}
+
+.cta a{
+    text-decoration:none;
+    -webkit-transition:all 0.2s linear;
+    transition:all 0.2s linear;
+}
+
+.cta .fas{
+    display:block;
+    font-size:200%;
+    margin-bottom:10px;
+}
+
+.cta.learning a,
+.cta.learning a:visited{
+    color:#26a9e1;
+}
+
+.cta.learning a:hover,
+.cta.learning a:focus{
+    color:#0255a3;
+}
+
+.cta.members a,
+.cta.members a:visited{
+    color:#662f90;
+}
+
+.cta.members a:hover,
+.cta.members a:focus{
+    color:#9266ab;
+}
+
+.cta.resources a,
+.cta.resources a:visited{
+    color:#f79520;
+}
+
+.cta.resources a:hover,
+.cta.resources a:focus{
+    color:#b75c0b;
+}
+
+.cta.events a,
+.cta.events a:visited{
+    color:#ed2024;
+}
+
+.cta.events a:hover,
+.cta.events a:focus{
+    color:#950d10;
+}
+
+/*News*/
+
+#ctl01_TemplateBody_WebPartManager1_gwpciNews_ciNews_TaggedListRepeater_ctl03_NextButton{display:none;}
+.BlockTLItem.homeNews{
+
+}
+
+.BlockTLItem.homeNews{
+    display:inline-block;
+    vertical-align:top;
+    width: 29%;
+    margin:0px 2%;
+     border-bottom:0px;
+}
+
+.homeNews .contentTaggedListImageThumbnail {
+    display: block;
+    min-width: 100px;
+    min-height: 100px;
+    width: 100%!important;
+    border: 0px;
+    margin-bottom:10px;
+}
+
+.homeNews h4 a,
+.homeNews h4 a:visited{
+    text-decoration:none;
+    color:#000;
+    font-weight:bold;
+    font-size:17px;
+}
+
+.homeNews h4 a:hover,
+.homeNews h4 a:focus{
+    text-decoration:underline;
+}
+
+@media(max-width:874px){
+    .BlockTLItem.homeNews{
+        display:block;
+        width: 100%;
+        margin:10px 0px;
+        border-bottom:0px;
+    }
+}
+
+/*events*/
+
+.homeEvents .eventBlock{
+    font-size:16px;
+}
+
+.homeEvents .eventBlock .image{
+    display:block;
+    width:150px;
+    height:150px;
+    float: left;
+    margin-right: 15px;
+    background-size: cover;
+    background-position: center;
+}
+
+.homeEvents .eventBlock .content{
+    display:block;
+}
+
+.homeEvents .eventBlock a.title,
+.homeEvents .eventBlock a.title:visited{
+    display:block;
+    text-decoration:none;
+    color: #9266ab!important;
+    font-weight:bold;
+    font-size:21px;
+}
+.homeEvents .eventBlock a.title:hover,
+.homeEvents .eventBlock a.title:focus{
+    text-decoration:underline;
+}
+
+.homeEvents .eventBlock .date{
+     display:block;
+     font-weight:600;
+     margin:5px 0px;
+}
+
+@media(max-width:767px){
+    .homeEvents .eventBlock .image{
+        display:block;
+        width:100%;
+        height:150px;
+        background: red;
+        float: none;
+        margin-right: 0px;
+        margin-bottom:10px;
+        background-size: cover;
+    background-position: center;
+    }
+}
+
+.homeEvents .RadGrid_MetroTouch .rgMasterTable .rgSelectedCell,
+.homeEvents .RadGrid_MetroTouch .rgSelectedRow,
+.homeEvents .RadGrid_MetroTouch td.rgEditRow .rgSelectedRow,
+.homeEvents .RadGrid_MetroTouch .rgSelectedRow td.rgSorted {
+    color: #333;
+}
+
+.homeEvents .RadGrid_MetroTouch .rgMasterTable .rgSelectedCell a.title,
+.homeEvents .RadGrid_MetroTouch .rgSelectedRow a.title,
+.homeEvents .RadGrid_MetroTouch td.rgEditRow .rgSelectedRow a.title,
+.homeEvents .RadGrid_MetroTouch .rgSelectedRow td.rgSorted a.title{
+    color: #9266ab!important;
+}
+
+/***FOOTER***/
+
+.footer-content {
+    background-color: #eaeaea;
+    color: #000;
+    text-align: left;
+    padding-bottom: 20px;
+    font-size:14px;
+    margin-top: 30px;
+}
+
+.footer-content h3{
+    margin-top:20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.footer-content h3 a,
+.footer-content h3 a:visited{
+    color:#000;
+    display:block;
+    text-decoration: none;
+    font-size:18px;
+    font-weight: 600;
+}
+
+.footer-content a,
+.footer-content a:visited{
+    color:#000;
+    display:block;
+    text-decoration: none;
+    margin:5px 0px;
+}
+
+.footer-content a.TextButton,
+.footer-content a.TextButton:visited{
+    color:#fff;
+    display:inline-block;
+}
+
+.footer-content a.TextButton:hover,
+.footer-content a.TextButton:focus{
+    text-decoration:none;
+}
+
+.footer-content .social a,
+.footer-content .social a:visited{
+    display:inline-block;
+    margin:5px 5px 0px 0px;
+}
+
+.footer-content a:hover,
+.footer-content a:focus{
+    text-decoration:underline;
+}
+
+.footer-nav-copyright .footer-copyright {
+    display: inline-block;
+    margin: 0px;
+    width:100%;
+}
+
+.footer-nav-copyright {
+    background-color: #0355a3;
+    color: #fff;
+    padding: 15px 0px;
+}
+
+.footer-nav-copyright .copyright-right{
+    float:right;
+}
+
+.footer-nav-copyright a,
+.footer-nav-copyright a:visited{
+    text-decoration:none;
+}
+
+
+.footer-nav-copyright a:after{
+    content:"|";
+    margin:0px 7px;
+}
+
+@media(max-width:767px){
+    .footer-nav-copyright .copyright-right{
+        float:none;
+        display:block;
+    }
+
+    .footer-nav-copyright a{
+        display:block;
+    }
+
+    .footer-nav-copyright a:after{
+       display:none;
+    }
+
+}
