@@ -151,19 +151,19 @@ function startProcess(eventid, userid, token) {
   // Steps to genrate PDF
   // Get Event date(s) and title
   var start = null;
+  var estart = null;
   var end = null;
+  var eend = null;
   var name = null;
   var eventname = null;
   dorequest("/api/Event/{0}".format(eventid),
     function(eventdata) {
-      if (eventdata["StartDateTime"]) { start = eventdata["StartDateTime"]; }
-      if (eventdata["EndDateTime"]) { end = eventdata["EndDateTime"]; }
       if (eventdata["Name"]) {eventname = eventdata["Name"]; }
+      if (eventdata["StartDateTime"]) { estart = eventdata["StartDateTime"]; }
+      if (eventdata["EndDateTime"]) { eend = eventdata["EndDateTime"]; }
   });
   postMessage({type: "progress", data: 1,});
-  console.log(start);
-  console.log(end);
-  if (start == null || end == null || eventname == null) {
+  if (estart == null || eend == null || eventname == null) {
     certlog("Invalid event data(dt).");
     return;
   }
@@ -185,7 +185,17 @@ function startProcess(eventid, userid, token) {
           regdata["Registrant"]["PersonName"]["LastName"]);
       } else {
       certlog("Unknown person.");
-    }
+      }
+      // build date data...
+      for (let fn of regdata["Functions"]["$values"]) {
+        if (start === null || fn["EventFunction"]["StartDateTime"] < start) {
+          start = fn["EventFunction"]["StartDateTime"];
+        }
+        if (end === null || fn["EventFunction"]["EndDateTime"] > end) {
+          end = fn["EventFunction"]["EndDateTime"];
+        }
+      }
+      if (!end || !start) { end = eend; start = estart;}
   });
   postMessage({type: "progress", data: 2,});
   console.log(orderid);
