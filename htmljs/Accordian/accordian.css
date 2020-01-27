@@ -33,3 +33,14 @@ h1, h2, h3, h4, h5, h6 {
 .uk-open > .uk-accordion-title::before {
   filter: invert(.5) sepia(1) brightness(2);
 }
+
+.uk-accordion-title:focus, .uk-accordion-title:hover {
+  color: #0255a3;
+}
+
+.uk-open > .uk-accordion-title:focus {
+  color: #ffffff;
+}
+.uk-open > .uk-accordion-title:hover {
+  color: #0255a3;
+}
