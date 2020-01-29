@@ -9,6 +9,7 @@
 from __future__ import print_function
 from sys import stderr
 import re, requests, json
+from collections import OrderedDict
 from datetime import datetime
 from time import sleep
 from os.path import expanduser, join
@@ -321,15 +322,19 @@ def ABset(uid, value):
         return False
     return True
 
-AOORGFIELDS = ("ContactKey", "AccountsEmail", "Level", "MarketingCategory", "MelbArch", "Region", "SchoolNumber", "SFOifApplicable")
-def populateAO_Org(orgent):
+AOORGFIELDS = ("ContactKey", "AccountsEmail", "Level", "Locality", "Region", "SchoolNumber", "SchoolType", "Sector", "SFOPercentage", "SubRegion")
+def populateAO_Org(orgent, newDict=False):
     r = requests.get("%s/api/AO_OrganisationsData/%s" % (API_URL, orgent["ID"]), headers=HEADERS)
     if r.status_code == 200:
         for p in r.json()["Properties"]["$values"]:
             if p["Name"] in AOORGFIELDS:
-                orgent[p["Name"]] = p["Value"]
+                if newDict is False: orgent[p["Name"]] = p["Value"]
+                else: newDict[p["Name"]] = p["Value"]
     for key in AOORGFIELDS:
-        if key not in orgent: orgent[key] = ""
+        if newDict is False:
+            if key not in orgent: orgent[key] = ""
+        else:
+            if key not in newDict: newDict[key] = ""
 
 ADDRFIELDS = ("Address1", "Address2", "Address3", "City", "Country", "County",
     "Email", "Fax", "FullAddress", "LastUpdated", "Phone",
@@ -366,10 +371,11 @@ def apiIterator(url, p):
     print("Total: %s" % r.json()["TotalCount"], file=stderr)
     while r.json()["Count"] > 0:
         nextoffset = r.json()["NextOffset"]
-        for x in r.json()["Items"]["$values"]:
+        for x in r.json(object_pairs_hook=OrderedDict)["Items"]["$values"]:
             yield x
         if nextoffset == 0: return
-        r = requests.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
+        print(nextoffset)
+        r = requests.get("%s%s" % (API_URL, url), headers=HEADERS,
             params=p+[('offset', nextoffset)])
         if r.status_code != 200:
             print("ERROR: "+ r.text)
