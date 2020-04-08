@@ -58,6 +58,12 @@ onmessage = function(e) {
         token = arg[0];
         startProcessing(arg[1], arg[2], arg[3], arg[4]);
         break;
+      case 'ping':
+        postMessage({
+          type: type,
+          data: iMISPing(),
+        });
+        break;
       default:
         console.error('invalid type passed in');
         break;

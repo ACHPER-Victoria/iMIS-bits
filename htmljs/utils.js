@@ -192,3 +192,10 @@ function genRegistration(eventid, regoptid, id) {
   body["BillTo"] = id;
   return body;
 }
+
+
+function iMISPing() {
+  console.log("ping");
+  var params = [["limit", 1]];
+  var result = dorequest("/api/CsContact", null, null, params);
+}

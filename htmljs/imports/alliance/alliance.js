@@ -61,14 +61,16 @@ myWorker.onmessage = function(e) {
     updateProgress(data);
   } else if (type === 'setMaxProgress') {
     setMaxProgress(data);
-  } else if( type === 'getFieldItems') {
+  } else if (type === 'getFieldItems') {
     populatePullDownData(data);
-  } else if( type === 'createAlliance') {
+  } else if (type === 'createAlliance') {
     createAllianceDone(data);
-  } else if( type === 'getHeaders') {
+  } else if (type === 'getHeaders') {
     handleFilesDone(data);
-  } else if( type === 'endProcessing') {
+  } else if (type === 'endProcessing') {
     endProcessing(data);
+  } else if (type == 'ping') {
+    setTimeout(doPing, 5000);
   } else {
     console.error('An Invalid type has been passed in');
   }
@@ -201,3 +203,9 @@ function endProcessing(data) {
     disableUI(false, true);
   }
 }
+
+function doPing() {
+  workerMaker('ping', [document.getElementById("__RequestVerificationToken").value]);
+}
+
+setTimeout(doPing, 5000);
