@@ -1,0 +1,36 @@
+<script type="text/javascript">
+function hideLink() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var linktext = jQuery("h3#SubAcctLink");
+  var buttons = jQuery("[name$='btnNext_3']");
+  if (!jdata["isAnonymous"]) {
+    linktext.css('display', 'none');
+    linktext.css('visibility', 'hidden');
+    buttons.css('display', 'none');
+    buttons.css('visibility', 'hidden');
+  }
+}
+
+function checkAndRedirect() {
+  if(document.getElementById("ctl01_TemplateUserMessages_ctl00_MessagesRepeater_ctl01_UserMessageText")) {
+    //redirect
+    var ret = (new URLSearchParams(window.location.search)).get('return')
+    if (ret) { window.location.replace(ret); }
+    else { window.location.replace("https://achper.vic.edu.au"); }
+  }
+}
+
+function addRedirect() {
+  var ret = (new URLSearchParams(window.location.search)).get('return')
+  if (!ret) {
+    // store redirect in URL Params
+    var searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("return", document.referrer);
+    window.location.search = searchParams.toString();
+  }
+}
+
+window.addEventListener("DOMContentLoaded", hideLink);
+window.addEventListener("DOMContentLoaded", addRedirect);
+window.addEventListener("DOMContentLoaded", checkAndRedirect);
+</script>
