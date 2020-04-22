@@ -63,7 +63,7 @@
    ========================================================================== */
 /**
  * The following declarations are required to reposition the search bar and
- * Sign In/Out link at different sizes via appendAround 
+ * Sign In/Out link at different sizes via appendAround
  */
 .search-container,
 .auth-link-container {
@@ -224,7 +224,7 @@
    ========================================================================== */
 /**
  * Responsive sticky footer.
- * See http://www.joshrcook.com/a-responsive-sticky-footer/ 
+ * See http://www.joshrcook.com/a-responsive-sticky-footer/
  */
 .wrapper {
   display: table;
@@ -378,9 +378,9 @@ div.ShowFieldset fieldset,
 }
 
 /**
-      * This automatically resizes images when they're too large to fit in their container. 
-      * It may override any user-defined width/height on images. If the behavior is unwanted, 
-      * consider changing this declaration to a class (e.g. '.img-responsive') which you can 
+      * This automatically resizes images when they're too large to fit in their container.
+      * It may override any user-defined width/height on images. If the behavior is unwanted,
+      * consider changing this declaration to a class (e.g. '.img-responsive') which you can
       * apply as desired.
       */
 img {
@@ -1495,10 +1495,10 @@ img.ImgNoResize, .ImgNoResize img {
 /* Auxiliary/Primary switch
    ========================================================================== */
 /**
- * A class that allows a navigation to display in the primary nav on xs screens 
- * and the auxiliary nav on wider screens. 
- * To use this configure the nav item to not be hidden and also display in the 
- * auxiliary navigaiton item. 
+ * A class that allows a navigation to display in the primary nav on xs screens
+ * and the auxiliary nav on wider screens.
+ * To use this configure the nav item to not be hidden and also display in the
+ * auxiliary navigaiton item.
  */
 @media (max-width: 767px) {
   .nav-auxiliary .nav-aux-primary-switch,
@@ -1843,7 +1843,7 @@ input[type="color"]::placeholder,
   opacity: 1;
 }
 
-/* RadComboBox needs the same styles as normal inputs, 
+/* RadComboBox needs the same styles as normal inputs,
  * but has to be done separately due to its structure */
 .RadComboBox.RadComboBox_MetroTouch {
   color: #555555;

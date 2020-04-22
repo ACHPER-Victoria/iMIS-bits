@@ -18,20 +18,20 @@ ul {
 }
 
 .uk-accordion-title {
-    color: #26a9e1;
-    border: #26a9e1;
+    color: #149eab;
+    border: #149eab;
     border-width: medium;
     border-style: solid;
     padding: 5px 7px;
     text-decoration-line: initial;
 }
 .uk-accordion-title::before {
-  filter: invert(.5) sepia(1) saturate(5) hue-rotate(175deg);
+  filter: invert(.5) sepia(1) saturate(330%) hue-rotate(136deg) brightness(80%);
 }
 .uk-open > .uk-accordion-title {
-    background-color: #26a9e1;
+    background-color: #149eab;
     color: #ffffff;
-    border: #26a9e1;
+    border: #149eab;
     border-width: medium;
     border-style: solid;
     padding: 5px 7px;

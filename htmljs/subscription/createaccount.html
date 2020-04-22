@@ -25,8 +25,10 @@ function addRedirect() {
   if (!ret) {
     // store redirect in URL Params
     var searchParams = new URLSearchParams(window.location.search);
-    searchParams.set("return", document.referrer);
-    window.location.search = searchParams.toString();
+    if (document.referrer) {
+      searchParams.set("return", document.referrer);
+      window.location.search = searchParams.toString();
+    }
   }
 }
 

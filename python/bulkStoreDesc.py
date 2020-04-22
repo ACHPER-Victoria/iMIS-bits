@@ -4,12 +4,13 @@ import requests
 import json
 from sys import exit
 
-POST_PURCHASE_INFO = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">My Account</a> to access digital resources.'
-DESCRIPTION_TEXT = 'SACs and suggested answers in downloadable Word format'
+POST_PURCHASE_INFO = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">My Account</a> - Downloads to access digital resources.'
+SAC_DESC = 'SACs and suggested answers in downloadable Word format'
+TE_DESC = 'Trial Exams and suggested answers in downloadable PDF format'
 
-def modifyItem(storeobj):
+def modifyItem(storeobj, desc=None):
     storeobj["RelatedContentMessage"] = POST_PURCHASE_INFO
-    storeobj["Description"] = DESCRIPTION_TEXT
+    if desc: storeobj["Description"] = desc
     sobj = json.dumps(storeobj)
     r = requests.put("%s/api/Item/%s" % (API_URL, storeobj["ItemId"]), headers=HEADERS, data=sobj)
     if r.status_code != 201:
@@ -20,11 +21,24 @@ def modifyItem(storeobj):
         print "----"
         exit(1)
 
-CLASSES = ("SALES-VCE-SACS-M", "SALES-VCE-SACS" )
 COUNT = 0
-for cls in CLASSES:
+if False:
+    for cls in ("SALES-VCE-SACS-M", "SALES-VCE-SACS" ):
+        for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
+            print storeobj["Name"].encode("utf-8")
+            modifyItem(storeobj, SAC_DESC)
+            print ".",
+            COUNT += 1
+    for cls in ("SALES-VCE-TE", "SALES-VCE-TE-M"):
+        for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
+            print storeobj["Name"].encode("utf-8")
+            modifyItem(storeobj, TE_DESC)
+            print ".",
+            COUNT += 1
+
+for cls in ("SALES-HPEH", "SALES-HPEH-M", "SALES-WEBREC", "SALES-WEBREC-M"):
     for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
         print storeobj["Name"].encode("utf-8")
-        modifyItem(storeobj)
+        modifyItem(storeobj, False)
         print ".",
         COUNT += 1

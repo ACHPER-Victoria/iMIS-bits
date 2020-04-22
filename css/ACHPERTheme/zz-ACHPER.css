@@ -53,23 +53,23 @@ h3 a.highlight{
 }
 
 h3 a.highlight.blue{
-    color:#26a9e1;
+    color:#149EAB;
 }
 
 h3 a.highlight.purple{
-    color:#662f90;
+    color:#7E3281;
 }
 
 h4, .h4, .SectionLabel {
     font-size: 28px;
     font-weight:bold;
-    color:#26a9e1;
+    color:#149EAB;
 }
 
 h5, .h5 {
     font-size: 18px;
     font-weight:bold;
-    color:#662f90;
+    color:#7E3281;
     line-height: 1.6;
 }
 
@@ -83,7 +83,7 @@ h6, .h6 {
 /*Buttons*/
 .btn, .TextButton, .TextButtonWithImage, .ruButton, #masterHeaderActionArea a, .RadGrid input.TextButton {
     color: #fff;
-    background-color: #26a9e1;
+    background-color: #149EAB;
     border-color: transparent;
     font-size:18px;
     font-weight:600;
@@ -111,7 +111,7 @@ h6, .h6 {
 
 .ThirdButton,
 .ThirdButton:visited{
-    background-color: #662f90;
+    background-color: #7E3281;
 }
 
 .ThirdButton:hover,
@@ -340,7 +340,7 @@ h6, .h6 {
 }
 
 .RadMenu.RadMenu_Austin .rmLink, .RadMenu.RadMenu_Austin .rsmLink {
-    color: #26a9e1;
+    color: #149EAB;
     text-decoration: none;
     display: block;
     position: relative;
@@ -348,19 +348,19 @@ h6, .h6 {
 
 /*root hover*/
 .RadMenu.RadMenu_Austin .rmRootLink.rmExpanded, .RadMenu.RadMenu_Austin .rmRootLink:hover, .RadMenu.RadMenu_Austin .rmRootLink.rmFocused {
-    background-color: #26a9e1;
+    background-color: #149EAB;
     color: #fff;
 }
 
 /*root selected*/
 .RadMenu.RadMenu_Austin .rmRootLink.rmSelected {
     color: #fff;
-    background-color: #26a9e1;
+    background-color: #149EAB;
 }
 
 /*dropwdown bg*/
 .RadMenu.RadMenu_Austin .rmGroup {
-    background-color: #26a9e1;
+    background-color: #149EAB;
 }
 /*children*/
 .RadMenu.RadMenu_Austin .rmSlide .rmLink {
@@ -387,7 +387,7 @@ h6, .h6 {
 .navbar-toggle,
 .navbar-toggle:hover,
 .navbar-toggle:focus {
-    background-color: #26a9e1;
+    background-color: #149EAB;
 }
 
 .searchbar-collapse {
@@ -402,12 +402,12 @@ h6, .h6 {
 @media(max-width:767px){
     /*add lines*/
     .RadMenu.RadMenu_Austin .rmRootGroup > .rmItem > .rmLink {
-        border:1px solid #26a9e1;
+        border:1px solid #149EAB;
         border-bottom:0px;
     }
 
     .RadMenu.RadMenu_Austin .rmRootGroup > .rmItem.rmLast > .rmLink {
-        border-bottom:1px solid #26a9e1;
+        border-bottom:1px solid #149EAB;
     }
 
     /*fix secondary items*/
@@ -436,7 +436,7 @@ h6, .h6 {
 /***SECONDARY MENU***/
 
 .nav-secondary .sub-nav-head {
-    background-color: #26a9e1;
+    background-color: #149EAB;
     color: #fff;
     font-weight: bold;
     font-size:20px;
@@ -473,7 +473,7 @@ h6, .h6 {
 
 .RadTreeView.RadTreeView_Austin .rtSelected > a.rtIn, .RadTreeView.RadTreeView_Austin .child-is-selected.rtIn {
     background-color: transparent;
-    color: #26a9e1;
+    color: #149EAB;
 }
 
 .RadTreeView.RadTreeView_Austin .rtLI, .RadTreeView.RadTreeView_Austin .rtTop, .RadTreeView.RadTreeView_Austin .rtMid, .RadTreeView.RadTreeView_Austin .rtBot {
@@ -626,9 +626,8 @@ h6, .h6 {
 
 .cta.learning a,
 .cta.learning a:visited{
-    color:#26a9e1;
+    color:#149EAB;
 }
-
 .cta.learning a:hover,
 .cta.learning a:focus{
     color:#0255a3;
@@ -636,9 +635,8 @@ h6, .h6 {
 
 .cta.members a,
 .cta.members a:visited{
-    color:#662f90;
+    color:#7E3281;
 }
-
 .cta.members a:hover,
 .cta.members a:focus{
     color:#9266ab;
@@ -648,7 +646,6 @@ h6, .h6 {
 .cta.resources a:visited{
     color:#f79520;
 }
-
 .cta.resources a:hover,
 .cta.resources a:focus{
     color:#b75c0b;
@@ -658,10 +655,18 @@ h6, .h6 {
 .cta.events a:visited{
     color:#ed2024;
 }
-
 .cta.events a:hover,
 .cta.events a:focus{
     color:#950d10;
+}
+
+.cta.hpe a,
+.cta.hpe a:visited{
+    color:#489E45;
+}
+.cta.hpe a:hover,
+.cta.hpe a:focus{
+    color:#295927;
 }
 
 /*News*/
