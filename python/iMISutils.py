@@ -9,18 +9,26 @@
 from __future__ import print_function
 from sys import stderr
 import re, requests, json
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 from collections import OrderedDict
 from datetime import datetime
 from time import sleep
 from os.path import expanduser, join
 home = expanduser("~")
 
+rsession = requests.Session()
+retries = Retry(total=25,
+                backoff_factor=0.1,
+                status_forcelist=[ ])
+rsession.mount('https://', HTTPAdapter(max_retries=retries))
+
 SETTINGS = json.load(open(join(home, ".iMIS.json"), "rb"))
 SITE_NAME = SETTINGS["SITE_NAME"]
 API_URL = SETTINGS["API_URL"]
 h = {'content-type': "application/x-www-form-urlencoded"}
 formdata = {"Username" : SETTINGS["username"], "Password": SETTINGS["password"], "Grant_type":"password"}
-r = requests.post("%s/token" % API_URL, headers=h, data=formdata)
+r = rsession.post("%s/token" % API_URL, headers=h, data=formdata)
 TOKEN = "Bearer %s" % r.json()[u'access_token']
 HEADERS = {
     'content-type': "application/json",
@@ -115,9 +123,9 @@ ALLIANCE_BODY = """{
     }
 }"""
 
-ABTEST_BODY = """{
+SPECTEST_BODY = """{
     "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
-    "EntityTypeName": "ABTest",
+    "EntityTypeName": "ACH_SpecialOffers",
     "PrimaryParentEntityTypeName": "Party",
     "PrimaryParentIdentity": {
         "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
@@ -139,10 +147,18 @@ ABTEST_BODY = """{
             },
             {
                 "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
-                "Name": "AB1",
+                "Name": "SAC2020Used",
                 "Value": {
                     "$type": "System.Boolean",
-                    "$value": %s
+                    "$value": "%s"
+                }
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "SAC2020Qualify",
+                "Value": {
+                    "$type": "System.Boolean",
+                    "$value": "%s"
                 }
             }
         ]
@@ -153,7 +169,7 @@ GROUP_MAPPING = {}
 MAPPING = {}
 
 def findGroup(groupname):
-    r = requests.get("%s/api/Group" % API_URL, headers=HEADERS, params={'Name': '%s' % groupname, "limit":1})
+    r = rsession.get("%s/api/Group" % API_URL, headers=HEADERS, params={'Name': '%s' % groupname, "limit":1})
     if r.status_code == 404:
         print(r.text)
         return False
@@ -173,16 +189,16 @@ def lookupGroup(groupName):
 
 def giveAccess(imisid):
     data_body = ACCESS_BODY % imisid
-    r = requests.get("%s/api/UserOptions/%s" % (API_URL, imisid), headers=HEADERS)
+    r = rsession.get("%s/api/UserOptions/%s" % (API_URL, imisid), headers=HEADERS)
     if r.status_code == 200:
         for value in r.json()["Properties"]["$values"]:
             if value["Name"] == "CanPurchaseVCE":
                 if value["Value"]["$value"]:
                     return True
         print("giving access")
-        r = requests.put("%s/api/UserOptions/%s" % (API_URL, imisid), headers=HEADERS, data=data_body)
+        r = rsession.put("%s/api/UserOptions/%s" % (API_URL, imisid), headers=HEADERS, data=data_body)
     elif r.status_code == 404:
-        r = requests.post("%s/api/UserOptions" % (API_URL), headers=HEADERS, data=data_body)
+        r = rsession.post("%s/api/UserOptions" % (API_URL), headers=HEADERS, data=data_body)
     else:
         print("WAT: %s" % r.text)
         return None
@@ -192,7 +208,7 @@ def giveAccess(imisid):
     else: return True
 
 def enableProgramItems(eventid, enable=True):
-    r = requests.get("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS)
+    r = rsession.get("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS)
     if r.status_code == 200:
         # Modify functions
         event = r.json()
@@ -200,7 +216,7 @@ def enableProgramItems(eventid, enable=True):
             for attr in func["AdditionalAttributes"]["$values"]:
                 if attr["Name"] == "WebEnabled": attr["Value"]["$value"] = enable
         #upload modifications
-        r = requests.put("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS, json=event)
+        r = rsession.put("%s/api/Event/%s" % (API_URL, eventid), headers=HEADERS, json=event)
         print(r.status_code)
         if r.status_code != 200 and r.status_code != 201:
             print(r.text)
@@ -210,11 +226,11 @@ def enableProgramItems(eventid, enable=True):
 
 def isUserInGroup(userid, groupname):
     groupID = lookupGroup(groupname)
-    r = requests.get("%s/api/GroupMember" % API_URL, headers=HEADERS, params={'GroupId': '%s' % groupID, "PartyId": userid, "limit":1})
+    r = rsession.get("%s/api/GroupMember" % API_URL, headers=HEADERS, params={'GroupId': '%s' % groupID, "PartyId": userid, "limit":1})
     return r.json()["Count"] > 0
 
 def resolveAOUser(aoid):
-    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'MajorKey': '%s' % aoid, "limit":1})
+    r = rsession.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'MajorKey': '%s' % aoid, "limit":1})
     if r.json()["Count"] < 1:
         return None
     if len(r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"]) > 1:
@@ -222,7 +238,7 @@ def resolveAOUser(aoid):
     return r.json()["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
 
 def getUserIDByEmail(email):
-    r = requests.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'eq:%s' % email, "limit":2})
+    r = rsession.get("%s/api/CsContactBasic" % API_URL, headers=HEADERS, params={'email': 'eq:%s' % email, "limit":2})
     if r.json()["Count"] < 1:
         return 0
     if r.json()["Count"] > 1:
@@ -233,7 +249,7 @@ def addToGroup(user, groupname):
     groupID = lookupGroup(groupname)
     if isUserInGroup(user, groupname):
         return True
-    r = requests.post("%s/api/GroupMember" % API_URL, headers=HEADERS, data=ADDGROUP_BODY % (groupID, user))
+    r = rsession.post("%s/api/GroupMember" % API_URL, headers=HEADERS, data=ADDGROUP_BODY % (groupID, user))
     if r.status_code != 201:
         print("Error Adding (%s) to (%s) %s" % (user, groupname, groupID))
         print(r.text)
@@ -242,7 +258,7 @@ def addToGroup(user, groupname):
         return True
 
 def allianceList(alliancename):
-    r = requests.get("%s/api/ACH_MarketingGroups" % API_URL, params={'GroupName': alliancename, "limit": 500}, headers=HEADERS)
+    r = rsession.get("%s/api/ACH_MarketingGroups" % API_URL, params={'GroupName': alliancename, "limit": 500}, headers=HEADERS)
     if r.status_code != 200:
         print("Error getting list" % (user, groupname, groupID))
         print(r.text)
@@ -254,7 +270,7 @@ def allianceList(alliancename):
         return users
 
 def addToAlliance(userid, alliancename):
-    r = requests.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY % (userid, userid, alliancename))
+    r = rsession.post("%s/api/ACH_MarketingGroups" % API_URL, headers=HEADERS, data=ALLIANCE_BODY % (userid, userid, alliancename))
     if r.status_code != 201:
         print("Error Adding (%s) to (%s)" % (userid, alliancename))
         print(r.text)
@@ -263,7 +279,7 @@ def addToAlliance(userid, alliancename):
         return True
 
 def getCommunicationPreferences():
-    r = requests.get("%s/api/CommunicationType" % API_URL, headers=HEADERS)
+    r = rsession.get("%s/api/CommunicationType" % API_URL, headers=HEADERS)
     if r.status_code != 200:
         print("Error")
         print(r.text)
@@ -272,7 +288,7 @@ def getCommunicationPreferences():
         return map(lambda x: x["ReasonCode"], r.json()["Items"]["$values"])
 
 def getCommPrefIDs(commpref):
-    r = requests.get("%s/api/CommunicationType" % (API_URL), headers=HEADERS, params={'ReasonCode': commpref})
+    r = rsession.get("%s/api/CommunicationType" % (API_URL), headers=HEADERS, params={'ReasonCode': commpref})
     if r.status_code != 200:
         print("Error getting comm pref (%s)" % commpref)
         print(r.text)
@@ -283,7 +299,7 @@ def getCommPrefIDs(commpref):
         typeid = r.json()["Items"]["$values"][0]["CommunicationTypeId"]
         print("Fetching all (%s) - %s" % (commpref, typeid))
         IDs = []
-        r = requests.get("%s/api/iqa" % (API_URL), headers=HEADERS,
+        r = rsession.get("%s/api/iqa" % (API_URL), headers=HEADERS,
             params=(('limit', 500),
                 ('QueryName', "$/%s/Contact Queries/CommunicationPrefs" % SITE_NAME),
                 ('parameter',"eq:"+typeid)))
@@ -295,7 +311,7 @@ def getCommPrefIDs(commpref):
             i += 500
             for x in r.json()["Items"]["$values"]:
                 IDs.append(filter(lambda z: z["Name"] == "ID", x["Properties"]["$values"])[0]["Value"])
-            r = requests.get("%s/api/iqa" % (API_URL), headers=HEADERS,
+            r = rsession.get("%s/api/iqa" % (API_URL), headers=HEADERS,
                 params=(('limit', 500), ('offset', i),
                     ('QueryName', "$/%s/Contact Queries/CommunicationPrefs" % SITE_NAME),
                     ('parameter',"eq:"+typeid)))
@@ -304,16 +320,10 @@ def getCommPrefIDs(commpref):
                 return
         return IDs
 
-def ABset(uid, value):
-    try:
-        r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
-    except requests.exceptions.ConnectionError:
-        print("Timeout...")
-        sleep(2)
-        print("Retrying")
-        r = requests.put("%s/api/ABTest/%s" % (API_URL, uid), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
+def SpecOfferSet(uid, used, allowed):
+    r = rsession.put("%s/api/ACH_SpecialOffers/%s" % (API_URL, uid), headers=HEADERS, data=SPECTEST_BODY % (uid, uid, used, allowed))
     if r.status_code == 404:
-        r = requests.post("%s/api/ABTest" % (API_URL), headers=HEADERS, data=ABTEST_BODY % (uid, uid, value))
+        r = rsession.post("%s/api/ACH_SpecialOffers" % (API_URL), headers=HEADERS, data=SPECTEST_BODY % (uid, uid, used, allowed))
         if r.status_code != 201:
             print("Error on post: " + r.text)
             return False
@@ -324,7 +334,7 @@ def ABset(uid, value):
 
 AOORGFIELDS = ("ContactKey", "AccountsEmail", "Level", "Locality", "Region", "SchoolNumber", "SchoolType", "Sector", "SFOPercentage", "SubRegion")
 def populateAO_Org(orgent, newDict=False):
-    r = requests.get("%s/api/AO_OrganisationsData/%s" % (API_URL, orgent["ID"]), headers=HEADERS)
+    r = rsession.get("%s/api/AO_OrganisationsData/%s" % (API_URL, orgent["ID"]), headers=HEADERS)
     if r.status_code == 200:
         for p in r.json()["Properties"]["$values"]:
             if p["Name"] in AOORGFIELDS:
@@ -343,7 +353,7 @@ ADDRMAP = { "Billing":"AddressNumber1", "Home Address": "AddressNumber2",
     "Reception": "AddressNumber3"
 }
 def populateOrgAddresses(orgent):
-    r = requests.get("%s/api/CsAddress" % (API_URL), headers=HEADERS,
+    r = rsession.get("%s/api/CsAddress" % (API_URL), headers=HEADERS,
         params=(('ID', orgent["ID"]),))
     if r.status_code != 200:
         print("ERROR: "+ r.text)
@@ -361,10 +371,16 @@ def IterateExpiredUsers():
         ('IsCompany', "false"))):
         yield x
 
+def IterateQuery(q, params=None):
+    qparams = (("queryname", q),)
+    if params: qparams = qparams + params
+    for x in apiIterator("/api/iqa", qparams):
+        yield x
+
 def apiIterator(url, p):
     p = list(p)
     p.append(("limit","100"))
-    r = requests.get("%s%s" % (API_URL, url), headers=HEADERS, params=p)
+    r = rsession.get("%s%s" % (API_URL, url), headers=HEADERS, params=p)
     if r.status_code != 200:
         print("ERROR: "+ r.text)
         return
@@ -375,7 +391,7 @@ def apiIterator(url, p):
             yield x
         if nextoffset == 0: return
         print(nextoffset)
-        r = requests.get("%s%s" % (API_URL, url), headers=HEADERS,
+        r = rsession.get("%s%s" % (API_URL, url), headers=HEADERS,
             params=p+[('offset', nextoffset)])
         if r.status_code != 200:
             print("ERROR: "+ r.text)
@@ -395,14 +411,14 @@ def refreshUserGroups(pid):
     print("Removing: %s" % mdremove)
     print("THEN Adding: %s" % readd)
     for md in mdremove:
-        r = requests.delete("%s/api/GroupMemberDetail/%s" % (API_URL, md), headers=HEADERS)
+        r = rsession.delete("%s/api/GroupMemberDetail/%s" % (API_URL, md), headers=HEADERS)
         if r.status_code != 200:
             print("ERROR: "+ r.text)
             return
     dt = datetime.now()
     df = dt.replace(dt.year+2)
     for gname, gid in readd:
-        r = requests.post("%s/api/GroupMember" % API_URL, headers=HEADERS,
+        r = rsession.post("%s/api/GroupMember" % API_URL, headers=HEADERS,
             data=ADDGROUP_BODY % (dt.isoformat(), df.isoformat(), gid, pid, dt.isoformat()))
         if r.status_code != 201:
             print("Error Adding (%s) to (%s) %s" % (pid, gname, gid))
@@ -422,7 +438,7 @@ def updateExpired(entity):
     print("Updating: %s" % uid)
     if not modifyEngagement(entity):
         "Failed to update ???"
-    r = requests.put("%s/api/CsContact/%s" % (API_URL, uid), headers=HEADERS, json=entity)
+    r = rsession.put("%s/api/CsContact/%s" % (API_URL, uid), headers=HEADERS, json=entity)
     if r.status_code != 201:
         print(r.text)
         return False
@@ -431,7 +447,7 @@ def updateExpired(entity):
 ITERFIELDS = ("ID", "AddressNumber1", "AddressNumber2", "AddressNumber3", "Company",
 "Country", "FullAddress", "LastUpdated", "MemberType", "Status", "FullName")
 def IterateOrgs():
-    r = requests.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
+    r = rsession.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
         params=(('limit', 100),
             ('IsCompany', "true"),))
     if r.status_code != 200:
@@ -448,12 +464,16 @@ def IterateOrgs():
             populateAO_Org(entry)
             populateOrgAddresses(entry)
             yield entry
-        r = requests.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
+        r = rsession.get("%s/api/CsContact" % (API_URL), headers=HEADERS,
             params=(('limit', 100), ('offset', i),
                 ('IsCompany', "true"),))
         if r.status_code != 200:
             print("ERROR: "+ r.text)
             return
+
+def IterateIndividuals():
+    for x in apiIterator("/api/CsContact", (("IsCompany", "false"), )):
+        yield x
 
 def accessProperty(item, pname, pval=None):
     for prop in item["Properties"]["$values"]:
@@ -467,7 +487,7 @@ def accessProperty(item, pname, pval=None):
 
 def updateProperty(item, url):
     iid = item["Identity"]["IdentityElements"]["$values"][0]
-    r = requests.put("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS, data=json.dumps(item))
+    r = rsession.put("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS, data=json.dumps(item))
     if r.status_code != 200 and r.status_code != 201:
         print(r.status_code, " - ", r.text)
         return False
