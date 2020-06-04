@@ -242,7 +242,7 @@ h6, .h6 {
 .UtilitySection.UtilityAuthentication a:visited{
     text-decoration:none;
     color:#000;
-    text-transform:uppercase;
+/*    text-transform:uppercase; */
     font-weight:600;
 }
 
@@ -663,10 +663,12 @@ h6, .h6 {
 .cta.hpe a,
 .cta.hpe a:visited{
     color:#489E45;
+    text-transform: none;
 }
 .cta.hpe a:hover,
 .cta.hpe a:focus{
     color:#295927;
+    text-transform: none;
 }
 
 /*News*/
