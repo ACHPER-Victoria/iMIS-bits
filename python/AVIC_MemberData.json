@@ -1,0 +1,65 @@
+{
+  "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
+  "EntityTypeName": "AVIC_MemberData",
+  "PrimaryParentEntityTypeName": "Party",
+  "Identity": {
+      "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+      "EntityTypeName": "AVIC_MemberData",
+      "IdentityElements": {
+          "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+          "$values": [
+              ""
+          ]
+      }
+  },
+  "PrimaryParentIdentity": {
+      "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
+      "EntityTypeName": "Party",
+      "IdentityElements": {
+          "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+          "$values": [
+              ""
+          ]
+      }
+  },
+  "Properties": {
+      "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
+      "$values": [
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "ID",
+              "Value": ""
+          },
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "AreaOfFocus",
+              "Value": ""
+          },
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "BirthYear",
+              "Value": ""
+          },
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "HowConnect",
+              "Value": ""
+          },
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "HPETeachLevel",
+              "Value": "OTHER"
+          },
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "Role",
+              "Value": ""
+          },
+          {
+              "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+              "Name": "YearOfGraduation",
+              "Value": ""
+          }
+      ]
+  }
+}

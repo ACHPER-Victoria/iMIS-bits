@@ -1,0 +1,132 @@
+{
+    "$type": "Asi.Soa.Membership.DataContracts.PersonData, Asi.Contracts",
+    "PersonName": {
+        "$type": "Asi.Soa.Membership.DataContracts.PersonNameData, Asi.Contracts",
+        "FirstName": "",
+        "LastName": "",
+        "NamePrefix": ""
+    },
+    "PrimaryOrganization": {
+        "$type": "Asi.Soa.Membership.DataContracts.PrimaryOrganizationInformationData, Asi.Contracts",
+        "Name": "",
+        "Title": ""
+    },
+    "AdditionalAttributes": {
+        "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
+        "$values": [
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "CustomerTypeCode",
+                "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "JoinDate",
+                "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "PaidThruDate",
+                "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "RenewedThruDate",
+                "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "Chapter",
+                "Value": ""
+            }
+        ]
+    },
+    "Addresses": {
+        "$type": "Asi.Soa.Membership.DataContracts.FullAddressDataCollection, Asi.Contracts",
+        "$values": [
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.FullAddressData, Asi.Contracts",
+                "AdditionalLines": {
+                    "$type": "Asi.Soa.Membership.DataContracts.AddressLineDataCollection, Asi.Contracts",
+                    "$values": []
+                },
+                "Address": {
+                    "$type": "Asi.Soa.Membership.DataContracts.AddressData, Asi.Contracts",
+                    "AddressLines": {
+                        "$type": "Asi.Soa.Membership.DataContracts.AddressLineDataCollection, Asi.Contracts",
+                        "$values": [ ]
+                    },
+                    "CityName": "",
+                    "CountryCode": "",
+                    "CountrySubEntityCode": "",
+                    "PostalCode": ""
+                },
+                "AddressPurpose": "Billing",
+                "CommunicationPreferences": {
+                    "$type": "Asi.Soa.Membership.DataContracts.CommunicationPreferenceDataCollection, Asi.Contracts",
+                    "$values": [
+                        {
+                            "$type": "Asi.Soa.Membership.DataContracts.CommunicationPreferenceData, Asi.Contracts",
+                            "Reason": "default"
+                        },
+                        {
+                            "$type": "Asi.Soa.Membership.DataContracts.CommunicationPreferenceData, Asi.Contracts",
+                            "Reason": "mail"
+                        },
+                        {
+                            "$type": "Asi.Soa.Membership.DataContracts.CommunicationPreferenceData, Asi.Contracts",
+                            "Reason": "bill"
+                        },
+                        {
+                            "$type": "Asi.Soa.Membership.DataContracts.CommunicationPreferenceData, Asi.Contracts",
+                            "Reason": "ship"
+                        }
+                    ]
+                },
+                "Email": "",
+                "Phone": ""
+            }
+        ]
+    },
+    "Emails": {
+        "$type": "Asi.Soa.Membership.DataContracts.EmailDataCollection, Asi.Contracts",
+        "$values": [
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.EmailData, Asi.Contracts",
+                "Address": "",
+                "EmailType": "_Primary",
+                "IsPrimary": true
+            },
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.EmailData, Asi.Contracts",
+                "Address": "",
+                "EmailType": "Billing"
+            }
+        ]
+    },
+    "Phones": {
+        "$type": "Asi.Soa.Membership.DataContracts.PhoneDataCollection, Asi.Contracts",
+        "$values": [
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "Number": "",
+                "PhoneType": "_Work Phone"
+            },
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "Number": "",
+                "PhoneType": "Mobile"
+            },
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "Number": "",
+                "PhoneType": "Billing"
+            },
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "Number": "",
+                "PhoneType": "Home Address"
+            }
+        ]
+    }
+}

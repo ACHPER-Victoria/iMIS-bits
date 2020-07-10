@@ -475,6 +475,7 @@ def IterateIndividuals():
     for x in apiIterator("/api/CsContact", (("IsCompany", "false"), )):
         yield x
 
+### DEPRECATED ??? ###
 def accessProperty(item, pname, pval=None):
     for prop in item["Properties"]["$values"]:
         if prop["Name"] == pname:
@@ -484,10 +485,44 @@ def accessProperty(item, pname, pval=None):
             else:
                 if (pval is not None): prop["Value"] = pval
                 return prop["Value"]
-
 def updateProperty(item, url):
     iid = item["Identity"]["IdentityElements"]["$values"][0]
     r = rsession.put("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS, data=json.dumps(item))
+    if r.status_code != 200 and r.status_code != 201:
+        print(r.status_code, " - ", r.text)
+        return False
+    return True
+### ###
+
+def accessAttrib(item, pname, pval=None):
+    for prop in item["AdditionalAttributes"]["$values"]:
+        if prop["Name"] == pname:
+            if isinstance(prop["Value"], dict):
+                if (pval is not None): prop["Value"]["$value"] = pval
+                return prop["Value"]["$value"]
+            else:
+                if (pval is not None): prop["Value"] = pval
+                return prop["Value"]
+def addAttrib(item, pval):
+    item["AdditionalAttributes"]["$values"].append(pval)
+
+def updateAttrib(item, url):
+    iid = item["Id"]
+    r = rsession.put("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS, data=json.dumps(item))
+    if r.status_code != 200 and r.status_code != 201:
+        print(r.status_code, " - ", r.text)
+        return False
+    return True
+
+def getPerson(pid):
+    r = rsession.get("%s/api/Person/%s" % (API_URL, pid), headers=HEADERS)
+    if r.status_code != 200:
+        print(r.status_code, " - ", r.text)
+        return False
+    return r.json()
+
+def apipost(api, postdata):
+    r = rsession.post("%s/api/%s" % (API_URL, api), headers=HEADERS, data=json.dumps(postdata))
     if r.status_code != 200 and r.status_code != 201:
         print(r.status_code, " - ", r.text)
         return False

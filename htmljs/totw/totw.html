@@ -1,0 +1,49 @@
+<script type="text/javascript">
+function modifyLinks() {
+  // https://achper.vic.edu.au/public/resources/subscribe-login-resource.aspx
+  jQuery(".totw-links a").not(".uk-accordion-title").attr('href', function(i, val) {
+    if (val.startsWith("http://bit.ly") || val.startsWith("https://bit.ly") ) {
+      this.target = "";
+      this.text = "Become a Member to access";
+      return "https://achper.vic.edu.au/achper/membership/become-a-member/public/membership/become-a-member.aspx?hkey=e3557f87-b987-43ad-b876-95f6509a507f";
+    }
+  });
+}
+function getAttr(a, k) {
+  for (const prop of a)
+  {
+    if (prop["Name"] === k) {
+      if (prop["Value"]["$type"]) {
+        return prop["Value"]["$value"];
+      } else {
+        return prop["Value"];
+      }
+    }
+  }
+}
+function checkMemberType() {
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (userid) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', "/api/Person/"+userid, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('RequestVerificationToken', document.getElementById("__RequestVerificationToken").value);
+    xhr.onload = function() {
+      var response = null;
+      if (xhr.status === 200 || xhr.status === 201 || xhr.status === 202) {
+        if (xhr.responseText) {
+          response = JSON.parse(xhr.responseText);
+          if (["VICF", "VICS"].indexOf(getAttr(response["AdditionalAttributes"]["$values"], "CustomerTypeCode")) > -1) {
+            return; // allowed, so return
+          }
+        }
+      }
+      modifyLinks();
+    };
+    xhr.send();
+  } else {
+    modifyLinks();
+  }
+}
+window.addEventListener("DOMContentLoaded", checkMemberType);
+</script>

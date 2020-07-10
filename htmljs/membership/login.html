@@ -1,0 +1,26 @@
+<script type="text/javascript">
+function fixlink() {
+  // https://achper.vic.edu.au/ACHPERVic/Membership/Member-Sign-Up?iProductCode=VIC_Full_Membership
+  var link = document.getElementById("membloginlink");
+  var code = (new URLSearchParams(window.location.search)).get('iProductCode');
+  if (code && link) {
+    var u = new URL(link);
+    u.searchParams.append("iProductCode", code);
+    link.href = u.href;
+  }
+}
+function hideLink() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var buttons = jQuery("[name$='btnNext_5']");
+  var button2 = jQuery("[name$='btnNext_1']");
+  if (!jdata["isAnonymous"]) {
+    buttons.css('display', 'none');
+    buttons.css('visibility', 'hidden');
+  } else {
+    button2.css('display', 'none');
+    button2.css('visibility', 'hidden');
+  }
+}
+window.addEventListener("DOMContentLoaded", hideLink);
+window.addEventListener("DOMContentLoaded", fixlink);
+</script>
