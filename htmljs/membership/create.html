@@ -1,3 +1,7 @@
+<style type="text/css">
+  #studentmsg { display: none; }
+</style>
+
 <script type="text/javascript">
 function fixlink() {
   // https://achper.vic.edu.au/ACHPERVic/Membership/Member-Sign-Up?iProductCode=VIC_Full_Membership
@@ -17,6 +21,13 @@ function hideLink() {
     buttons.css('visibility', 'hidden');
   }
 }
+function showStudent() {
+  var code = (new URLSearchParams(window.location.search)).get('iProductCode');
+  if (code == "VIC_Student_Membership") {
+    document.getElementById("studentmsg").style.display = "block";
+  }
+}
 window.addEventListener("DOMContentLoaded", hideLink);
 window.addEventListener("DOMContentLoaded", fixlink);
+window.addEventListener("DOMContentLoaded", showStudent);
 </script>

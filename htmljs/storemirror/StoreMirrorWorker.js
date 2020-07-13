@@ -36,7 +36,7 @@ onmessage = function(e) {
       case 'startSync':
         // console.log('Posting message back to main script');
         token = arg[0];
-        setupSync(arg[1]) //categories
+        setupSync(arg[1], arg[2], arg[3]) //categories, percentdisc, freeitems
         break;
       default:
         console.error('invalid type passed in');
@@ -201,23 +201,33 @@ function setPrice(itemID, type, val){
   }
 }
 
-function updatePrices(itemID) {
+function updatePrices(itemID, percentdisc, freeitems) {
   var member = 99999;
   var standard = 99999;
   // get original prices Member, then Standard
   member = getPrice(itemID, "Member");
   standard = getPrice(itemID, "Standard");
   if (member === false || standard === false) { return false; }
-  //change itemID for member item ID
-  itemID = "{0}M".format(itemID);
-  // set price for both to member price.
-  member = setPrice(itemID, "Member", member);
-  standard = setPrice(itemID, "Standard", member);
+  //itemID for member item ID
+  var itemIDM = "{0}M".format(itemID);
+  // for orig item, set both to standard.
+  var imember = setPrice(itemID, "Member", standard);
+  var istandard = setPrice(itemID, "Standard", standard);
+  if (imember === false || istandard === false) { return false; }
+  // set price for both to member price discounted percentage.
+  if (freeitems.includes(itemID)) {
+    member = setPrice(itemIDM, "Member", 0.0);
+    standard = setPrice(itemIDM, "Standard", 0.0);
+  } else {
+    var memprice = (standard - (standard * (percentdisc/100.0)));
+    member = setPrice(itemIDM, "Member", memprice);
+    standard = setPrice(itemIDM, "Standard", memprice);
+  }
   if (member === false || standard === false) { return false; }
   return true;
 }
 
-function doMemberItem(item) {
+function doMemberItem(item, percentdisc, freeitems) {
   // POST/PUT update
   var origcode = item["ItemCode"];
   var method = "POST";
@@ -227,6 +237,7 @@ function doMemberItem(item) {
     setItem = true;
     url = "{0}SetItem".format(url);
   }
+
   var exists = itemMExists(origcode);
   var ret = null;
   if (exists) {
@@ -251,13 +262,15 @@ function doMemberItem(item) {
   var result = dorequest(url, null, null, [], item, method)
   if (!result[0]) { synclog("dMI Error ({0})".format(result[1])); return false; }
   // Check then update priceitem
-  ret = updatePrices(origcode);
+  ret = updatePrices(origcode, percentdisc, freeitems);
   if (!ret) { return false; }
   return true;
 }
 
-function setupSync(categories) {
+//categories, percentdisc, freeitems
+function setupSync(categories, percentdisc, freeitems) {
   // push total count back, then start for real...
+  freeitems = freeitems.split(",")
   var totalcount = countItems(categories);
   if (totalcount === false) { return; }
   postMessage({ type: "totalcount", data: totalcount });
@@ -273,7 +286,7 @@ function setupSync(categories) {
         _i => {console.log("E: " + _i); running = false; }
         )) {
       // process store item
-      if (!doMemberItem(item)) { running = false; break; }
+      if (!doMemberItem(item, percentdisc, freeitems)) { running = false; break; }
       incrementProcessed();
     }
     if (!running) { break; }

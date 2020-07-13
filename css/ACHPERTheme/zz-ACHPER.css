@@ -660,14 +660,24 @@ h6, .h6 {
     color:#950d10;
 }
 
-.cta.hpe a,
-.cta.hpe a:visited{
+.cta.elearn a,
+.cta.elearn a:visited{
     color:#489E45;
     text-transform: none;
 }
-.cta.hpe a:hover,
-.cta.hpe a:focus{
+.cta.elearn a:hover,
+.cta.elearn a:focus{
     color:#295927;
+    text-transform: none;
+}
+.cta.hpehome a,
+.cta.hpehome a:visited{
+    color:#223378;
+    text-transform: none;
+}
+.cta.hpehome a:hover,
+.cta.hpehome a:focus{
+    color:#0b1128;
     text-transform: none;
 }
 

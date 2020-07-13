@@ -52,12 +52,14 @@ myWorker.onmessage = function(e) {
 
 function initSyncPage() {
   // Preload categories.
-  jQuery('input#storecategories').val("CHARTS,UNITPLANS,VCE-SACS,VCE-TE,VCE-VET,WEBREC");
+  jQuery('input#storecategories').val("CHARTS,UNITPLANS,VCE-SACS,VCE-TE,VCE-VET,WEBREC,VIC-EL,HPEH");
 }
 function startSync() {
   STATUS = false;
   var categories = jQuery('input#storecategories').val();
-  workerMaker('startSync', [document.getElementById("__RequestVerificationToken").value, categories]);
+  var percentdisc = jQuery('input#percentdisc').val();
+  var freeitems = jQuery('input#freeitems').val();
+  workerMaker('startSync', [document.getElementById("__RequestVerificationToken").value, categories, percentdisc, freeitems]);
 }
 
 function complete(data) {
