@@ -1,0 +1,39 @@
+<script type="text/javascript">
+function redirect() {
+  window.location.replace("https://achper.vic.edu.au/public/resources/F-10/FMS-eBook-Member.aspx?hkey=f1d0e506-3db4-472a-9449-d6a602a96057");
+}
+function getAttr(a, k) {
+  for (const prop of a)
+  {
+    if (prop["Name"] === k) {
+      if (prop["Value"]["$type"]) {
+        return prop["Value"]["$value"];
+      } else {
+        return prop["Value"];
+      }
+    }
+  }
+}
+function checkMemberType() {
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (userid) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', "/api/Person/"+userid, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('RequestVerificationToken', document.getElementById("__RequestVerificationToken").value);
+    xhr.onload = function() {
+      var response = null;
+      if (xhr.status === 200 || xhr.status === 201 || xhr.status === 202) {
+        if (xhr.responseText) {
+          response = JSON.parse(xhr.responseText);
+          if (["VICF"].indexOf(getAttr(response["AdditionalAttributes"]["$values"], "CustomerTypeCode")) > -1) {
+            redirect(); // allowed, so redirect
+          }
+        }
+      }
+    };
+    xhr.send();
+  }
+}
+window.addEventListener("DOMContentLoaded", checkMemberType);
+</script>
