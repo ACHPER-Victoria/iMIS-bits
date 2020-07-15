@@ -1,0 +1,28 @@
+<script type="text/javascript">
+const debugMode = true;
+var processOrdersWebServiceUrl = 'https://achper.atsservices.net/wsmoodle.asmx/SendNewOrdersToMoodle?contactId=';
+
+processOrders();
+
+function processOrders() {
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (debugMode) { console.log("Processing orders for ID: " + userid); }
+  jQuery.ajax(processOrdersWebServiceUrl, {
+    type: 'get',
+    contentType: 'application/x-www-form-urlencoded',
+    success: function(data) {
+      if (debugMode) {
+          console.log(data);
+      }
+    },
+    error: function(jqXHR, textStatus, errorThrown) {
+      if (debugMode) {
+        console.log('Encountered error getting token for the user ID ' + gUserId + '.');
+        console.log('Error: ' + errorThrown); // Error returned
+        console.log(textStatus); // Request Status in plain text
+        console.log(jqXHR.status); // HTTP Status Code
+        console.log('Failed to load processOrders.');
+      }
+    }
+  });
+} </script>
