@@ -53,6 +53,7 @@ myWorker.onmessage = function(e) {
 function initSyncPage() {
   // Preload categories.
   jQuery('input#storecategories').val("CHARTS,UNITPLANS,VCE-SACS,VCE-TE,VCE-VET,WEBREC,VIC-EL,HPEH");
+  jQuery('input#freeitems').val("OCPEV20,2020HTR01,2020HTR02,2020HTRS01");
 }
 function startSync() {
   STATUS = false;

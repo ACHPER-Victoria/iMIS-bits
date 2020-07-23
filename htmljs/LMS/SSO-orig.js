@@ -1,15 +1,5 @@
 <script type='text/javascript'>
-  if (!String.prototype.includes) {
-    String.prototype.includes = function(search, start) {
-      'use strict';
 
-      if (search instanceof RegExp) {
-        throw TypeError('first argument must not be a RegExp');
-      }
-      if (start === undefined) { start = 0; }
-      return this.indexOf(search, start) !== -1;
-    };
-  }
 
     /* ------------------------------------------------------------------ */
     /* Client specific settings */
@@ -116,21 +106,18 @@ function processBridgeSettings(data, status, req, xml, xmlHttpRequest, responseX
         console.log('Got success response from IQA. Returned settings data:');
         console.log(data);
     }
+
+    parser = new DOMParser();
+    xmlDoc = parser.parseFromString(data, "text/xml");
+
     /* Use the returned JSON settings data to set the appropriate variables */
     var INCOMING_URL_PARAM = '';
-    var nodeAccess = false;
     var bridgeSettings = data.documentElement.children;
     if (typeof(bridgeSettings) === "undefined") bridgeSettings = data.Items;
-    if (typeof(bridgeSettings) === "undefined") {
-      bridgeSettings = data.documentElement.childNodes; // handle modern IE
-      nodeAccess = true;
-    }
+
     for (var i = 0; i < bridgeSettings.length; i++) {
-        if (bridgeSettings[i].nodeType !== 1) continue;
         var settingName = bridgeSettings[i].tagName.toUpperCase();
         var settingValue = bridgeSettings[i].innerHTML;
-        if (nodeAccess) settingValue = bridgeSettings[i].textContent;
-
         if (debugMode) {
             console.log('i is ' + i + '.');
             console.log('bridgeSettings[i]' + settingName );
@@ -324,12 +311,7 @@ function encryptUserID() {
 }
 
 function processEncryptUserID(data, status, req, xml, xmlHttpRequest, responseXML) {
-    // check for undefined children (modern IE)
-    if (typeof(req.responseXML.children) !== "undefined") {
-      gEncryptedUserId = req.responseXML.children[0].innerHTML;
-    } else {
-      gEncryptedUserId = req.responseXML.firstChild.textContent;
-    }
+    gEncryptedUserId = req.responseXML.children[0].innerHTML;
 
     if (debugMode) {
         console.log('gEncryptedUserId =' + gEncryptedUserId + '.');
@@ -354,8 +336,18 @@ function createCookie() {
 }
 
 function processUserRedirect() {
-    // Don't redirect to course... Redirect to main dashboard.
-    redirectURL = "https://achper.learnbook.com.au/";
+    courseId = getParameterByName(ssoCourseIDParam);
+
+    if(courseId === null || courseId === '')
+    {
+        //This is an error
+        if (debugMode) {
+            console.log('No Course ID was specifiedx');
+        }
+    }
+
+    redirectURL = courseURL + courseId;
+
     if (!redirectURL.includes('?'))
     {
         redirectURL = redirectURL + "?";

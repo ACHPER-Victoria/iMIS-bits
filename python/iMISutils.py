@@ -416,7 +416,7 @@ def refreshUserGroups(pid):
             print("ERROR: "+ r.text)
             return
     dt = datetime.now()
-    df = dt.replace(dt.year+2)
+    df = dt.replace(dt.year+4)
     for gname, gid in readd:
         r = rsession.post("%s/api/GroupMember" % API_URL, headers=HEADERS,
             data=ADDGROUP_BODY % (dt.isoformat(), df.isoformat(), gid, pid, dt.isoformat()))

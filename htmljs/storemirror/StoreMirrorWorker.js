@@ -56,7 +56,8 @@ function countItems(categories) {
   for (const cat of categories.split(",")) {
     // get count and add to total
     // Also check if member category exists...
-    var params = [["limit", 1], ["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+    //var params = [["limit", 1], ["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+    var params = [["limit", 1], ["ItemClassId", CLASSID.format(cat)],];
     var result = dorequest("/api/Item", null, null, params);
     if (result[0] && result[1]["TotalCount"] > 0) {
       // add count
@@ -281,7 +282,8 @@ function setupSync(categories, percentdisc, freeitems) {
       // skip categories that don't have Member category
       continue;
     }
-    var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+    //var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+    var params = [["ItemClassId", CLASSID.format(cat)],];
     for (const item of apiIterator("/api/Item", params,
         _i => {console.log("E: " + _i); running = false; }
         )) {
