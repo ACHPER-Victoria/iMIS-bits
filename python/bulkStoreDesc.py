@@ -4,10 +4,10 @@ import requests
 import json
 from sys import exit
 
-POST_PURCHASE_INFO = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">My Account</a> - Downloads to access digital resources.'
-POST_PURCHASE_INFO_EL = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">My Account</a> - My Products - eLearn to access your eLearn courses.'
-POST_PURCHASE_INFO_TE = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">My Account</a> - Downloads to access digital resources. Downloads to access Trial Exams when <a href="https://achper.vic.edu.au/public/shop/trial-exams.aspx#releasedate">released (Schedule)</a>.'
-POST_PURCHASE_INFO_SAC = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">My Account</a> - Downloads to access digital resources. Downloads to access SACs when <a href="https://achper.vic.edu.au/public/shop/sacs.aspx#releasedate">released (Schedule)</a>.'
+POST_PURCHASE_INFO = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">myACHPER</a> - My Products to access digital resources.'
+POST_PURCHASE_INFO_EL = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">myACHPER</a> - My Products - eLearn to access your eLearn courses.'
+POST_PURCHASE_INFO_TE = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">myACHPER</a> - My Products to access digital resources. Downloads to access Trial Exams when <a href="https://achper.vic.edu.au/public/shop/trial-exams.aspx#releasedate">released (Schedule)</a>.'
+POST_PURCHASE_INFO_SAC = 'Please go to <a href="https://achper.vic.edu.au/MyAccount">myACHPER</a> - My Products to access digital resources. Downloads to access SACs when <a href="https://achper.vic.edu.au/public/shop/sacs.aspx#releasedate">released (Schedule)</a>.'
 SAC_DESC = 'SACs and suggested answers in downloadable Word format'
 TE_DESC = 'Trial Exams and suggested answers in downloadable PDF format'
 
@@ -28,25 +28,25 @@ def modifyItem(storeobj, desc=None, type=""):
         exit(1)
 
 COUNT = 0
-# for cls in ("SALES-VCE-SACS-M", "SALES-VCE-SACS" ):
-#     for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
-#         print(storeobj["Name"].encode("utf-8"))
-#         modifyItem(storeobj, SAC_DESC, type="sac")
-#         print(".", end=" ")
-#         COUNT += 1
-# for cls in ("SALES-VCE-TE", "SALES-VCE-TE-M"):
-#     for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
-#         print(storeobj["Name"].encode("utf-8"))
-#         modifyItem(storeobj, TE_DESC, type="te")
-#         print(".", end=" ")
-#         COUNT += 1
-#
-# for cls in ("SALES-HPEH", "SALES-HPEH-M", "SALES-WEBREC", "SALES-WEBREC-M"):
-#     for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
-#         print(storeobj["Name"].encode("utf-8"))
-#         modifyItem(storeobj, False)
-#         print(".", end=" ")
-#         COUNT += 1
+for cls in ("SALES-VCE-SACS-M", "SALES-VCE-SACS" ):
+    for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
+        print(storeobj["Name"].encode("utf-8"))
+        modifyItem(storeobj, SAC_DESC, type="sac")
+        print(".", end=" ")
+        COUNT += 1
+for cls in ("SALES-VCE-TE", "SALES-VCE-TE-M"):
+    for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
+        print(storeobj["Name"].encode("utf-8"))
+        modifyItem(storeobj, TE_DESC, type="te")
+        print(".", end=" ")
+        COUNT += 1
+
+for cls in ("SALES-HPEH", "SALES-HPEH-M", "SALES-WEBREC", "SALES-WEBREC-M"):
+    for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
+        print(storeobj["Name"].encode("utf-8"))
+        modifyItem(storeobj, False)
+        print(".", end=" ")
+        COUNT += 1
 for cls in ("SALES-VIC-EL", "SALES-VIC-EL-M", ):
     for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
         print(storeobj["Name"].encode("utf-8"))

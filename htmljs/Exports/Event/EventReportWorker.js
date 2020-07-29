@@ -135,7 +135,7 @@ function addExOrgData(rfperson, ORGDATA, orgid) {
 }
 
 function addExPersonData(rfperson) {
-  dorequest("/api/AO_IndividualsData/{0}".format(rfperson["Id"]), function(data) {
+  dorequest("/api/AVIC_MemberData/{0}".format(rfperson["Id"]), function(data) {
       data["Properties"]["$values"].forEach(function(pdata) {
         if (pdata["Name"] == "HPETeachLevel") { rfperson["HPETeachLevel"] = pdata["Value"]; }
       });

@@ -242,7 +242,6 @@ h6, .h6 {
 .UtilitySection.UtilityAuthentication a:visited{
     text-decoration:none;
     color:#000;
-/*    text-transform:uppercase; */
     font-weight:600;
 }
 
@@ -256,7 +255,6 @@ h6, .h6 {
     display: inline-block;
     text-decoration:none;
     color:#000;
-    text-transform:uppercase;
     font-weight:600;
     border-right:1px solid #000;
 }
@@ -679,6 +677,14 @@ h6, .h6 {
 .cta.hpehome a:focus{
     color:#0b1128;
     text-transform: none;
+}
+
+/*MyAccount*/
+.RadTabStrip .rtsLI {
+  font-weight: bold;
+}
+.RadTabStrip_MetroTouch .rtsLevel1 .rtsLink {
+  border-color: #26a9e1 !important;
 }
 
 /*News*/

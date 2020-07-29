@@ -9,7 +9,7 @@ if (!String.prototype.format) {
     });
   };
 }
-var myWorker = new Worker('/common/Uploaded%20Files/Code/EventReportWorker-36.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/EventReportWorker.js');
 
 var eventid = (new URLSearchParams(window.location.search)).get("EventKey")
 

@@ -1,0 +1,11 @@
+<script type="text/javascript">
+function hideLink() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var buttons = jQuery("[name$='btnNext_4']");
+  if (!jdata["isAnonymous"]) {
+    buttons.css('display', 'none');
+    buttons.css('visibility', 'hidden');
+  }
+}
+window.addEventListener("DOMContentLoaded", hideLink);
+</script>
