@@ -47,7 +47,7 @@ for cls in ("SALES-HPEH", "SALES-HPEH-M", "SALES-WEBREC", "SALES-WEBREC-M"):
         modifyItem(storeobj, False)
         print(".", end=" ")
         COUNT += 1
-for cls in ("SALES-VIC-EL", "SALES-VIC-EL-M", ):
+for cls in ("SALES-VIC-EL", "SALES-VIC-EL-M", "SALES-EL-MAN"):
     for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
         print(storeobj["Name"].encode("utf-8"))
         modifyItem(storeobj, False, type="el")

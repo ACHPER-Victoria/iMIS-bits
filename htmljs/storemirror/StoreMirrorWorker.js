@@ -177,7 +177,9 @@ function getPrice(itemID, type){
   var params = [["ItemId", itemID], ["PriceSheetId", type]];
   var result = dorequest("/api/ItemPrice", null, null, params);
   if (result[0] && result[1]["Count"] > 0) {
-    return result[1]["Items"]["$values"][0]["DefaultPrice"]["Amount"]
+    var price = result[1]["Items"]["$values"][0]["DefaultPrice"]["Amount"];
+    if (price) { return price; }
+    else { return 0.0;}
   } else {
     synclog("uP Error: ({0})".format(result[1])); return false;
   }

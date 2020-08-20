@@ -148,6 +148,9 @@ function getGroupID(groupname) {
 function addUserToGroup() {
   // get id
   var imisid = (new URLSearchParams(window.location.search)).get("ID");
+  if (!imisid) {
+    imisid = (new URLSearchParams(window.location.search)).get("id");
+  }
   var groupnamebox = jQuery('#groupnameinput').val();
   var statusbox = jQuery('#GroupActionStatus');
   var addbutton = jQuery('#AddGroupButton');

@@ -1,5 +1,5 @@
 <script type="text/javascript">
-const debugMode = true;
+const debugMode = false;
 var processOrdersWebServiceUrl = 'https://achper.atsservices.net/wsmoodle.asmx/SendNewOrdersToMoodle?contactId=';
 
 processOrders();
@@ -7,7 +7,7 @@ processOrders();
 function processOrders() {
   var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
   if (debugMode) { console.log("Processing orders for ID: " + userid); }
-  jQuery.ajax(processOrdersWebServiceUrl, {
+  jQuery.ajax(processOrdersWebServiceUrl+userid, {
     type: 'get',
     contentType: 'application/x-www-form-urlencoded',
     success: function(data) {

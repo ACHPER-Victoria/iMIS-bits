@@ -1,3 +1,7 @@
+<style type="text/css">
+  #studentmsg { display: none; }
+</style>
+
 <script type="text/javascript">
 function hideLink() {
   var jdata = JSON.parse(document.getElementById("__ClientContext").value)
@@ -7,5 +11,33 @@ function hideLink() {
     buttons.css('visibility', 'hidden');
   }
 }
+function showStudent() {
+  var code = (new URLSearchParams(window.location.search)).get('iProductCode');
+  if (code == "VIC_Student_Membership") {
+    document.getElementById("studentmsg").style.display = "block";
+  }
+}
+function checkMemberType() {
+  var userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+  if (userid) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', "/api/Person/"+userid, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('RequestVerificationToken', document.getElementById("__RequestVerificationToken").value);
+    xhr.onload = function() {
+      var response = null;
+      if (xhr.status === 200 || xhr.status === 201 || xhr.status === 202) {
+        if (xhr.responseText) {
+          response = JSON.parse(xhr.responseText);
+          if (["VICS"].indexOf(getAttr(response["AdditionalAttributes"]["$values"], "CustomerTypeCode")) > -1) {
+            showStudent(); // student, show msg.
+          }
+        }
+      }
+    };
+    xhr.send();
+  }
+}
+window.addEventListener("DOMContentLoaded", showStudent);
 window.addEventListener("DOMContentLoaded", hideLink);
 </script>
