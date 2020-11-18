@@ -127,7 +127,7 @@ function processSetItem(item) {
   return true;
 }
 
-function processItem(item, setItem=false) {
+function processItem(item, setItem=false, blankout=false) {
   var code = item["ItemCode"];
   var mcode = "{0}M".format(code);
   // update code
@@ -147,8 +147,16 @@ function processItem(item, setItem=false) {
   item["ItemClass"]["ItemClassId"] = "{0}-M".format(item["ItemClass"]["ItemClassId"]);
   delete item["ItemClass"]["Name"];
   // if setItem, nuke the Components list only on item creation.
-  if (setItem) {
+  if (blankout) {
     item["Components"]["$values"] = [];
+  }
+  if (setItem) {
+    for(const si of item["Components"]["$values"]){
+        delete si["Item"]["ItemClass"];
+        si["Item"]["ItemCode"] = "{0}M".format(si["Item"]["ItemCode"]);
+        si["Item"]["ItemId"] = "{0}M".format(si["Item"]["ItemId"]);
+        delete si["Item"]["Name"]
+    }
   }
   return item;
 }
@@ -164,6 +172,8 @@ function deleteProductKit(id) {
 function addProductKit(kitem, pcode) {
   delete kitem["Identity"];
   genericProp(kitem, "PRODUCT_CODE", pcode)
+  var ipcc = genericProp(kitem, "ITEM_PRODUCT_CODE")
+  genericProp(kitem, "ITEM_PRODUCT_CODE", "{0}M".format(ipcc))
   deleteGenericProp(kitem, "SEQN");
   var result = dorequest("/api/Product_Kit", null, null, [], kitem);
   if (result[0]) { return true; }
@@ -233,6 +243,7 @@ function updatePrices(itemID, percentdisc, freeitems) {
 function doMemberItem(item, percentdisc, freeitems) {
   // POST/PUT update
   var origcode = item["ItemCode"];
+  //if (!origcode.includes("2021")) { return true; }
   var method = "POST";
   var url = "/api/Item";
   var setItem = false;
@@ -253,14 +264,14 @@ function doMemberItem(item, percentdisc, freeitems) {
     processSetItem(item);
     if (!exists) {
       // pre-make new item with empty components making a copy of item
-      var sitem = processItem(JSON.parse(JSON.stringify(item)), setItem);
+      var sitem = processItem(JSON.parse(JSON.stringify(item)), true, true);
       var sresult = dorequest(url, null, null, [], sitem, "POST")
       if (!sresult[0]) { synclog("dMI-1 Error ({0})".format(sresult[1])); return false; }
       method = "PUT"
       url = "/api/ItemSetItem/{0}M".format(origcode)
     }
   }
-  item = processItem(item); // reassignment not really needed
+  item = processItem(item, setItem); // reassignment not really needed
   // submit
   var result = dorequest(url, null, null, [], item, method)
   if (!result[0]) { synclog("dMI Error ({0})".format(result[1])); return false; }

@@ -356,15 +356,17 @@ function createCookie() {
 function processUserRedirect() {
     // Don't redirect to course... Redirect to main dashboard.
     redirectURL = "https://achper.learnbook.com.au/";
+    // check for course in querystring
+    if (typeof URLSearchParams != "undefined") {
+      var ucid = (new URLSearchParams(window.location.search)).get('cid')
+      if (ucid) {
+        redirectURL = redirectURL + "course/view.php?id=" + ucid;
+      }
+    }
     if (!redirectURL.includes('?'))
-    {
         redirectURL = redirectURL + "?";
-    }
     else
-    {
         redirectURL = redirectURL + "&";
-    }
-
     redirectURL = redirectURL + ssoGatewayUrlParam + "=" + encodeURI(gEncryptedUserId);
 
     if (debugMode) {

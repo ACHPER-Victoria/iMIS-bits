@@ -1,0 +1,25 @@
+<script src="/common/Uploaded%20files/Code/updateinventory/updateinv.js"></script>
+<style>.addtopalign { vertical-align: top; }</style>
+
+
+<h1>Bulk update inventory</h1>
+<a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
+<p>Item Category:
+  <select id="CatPullDown" size="8" multiple>
+    <option value="">(None)</option>
+  </select>
+</p>
+<div>
+Amount: <input type="number" id="amount" name="amount" value="9999"><br>
+  <strong>OR</strong><br>
+  <div>
+    <input type="checkbox" id="reduce2zero" name="reduce2zero">
+    <label for="reduce2zero">Reduce inventory to 0</label>
+  </div>
+</div>
+
+
+<a class="TextButton" id="startbutton" href="#" onclick="startUpdate();return false;" disabled="disabled">Start Update</a>
+<p>Progress: <span id="mergecount"></span>/<span id="mergetotal"></span></p>
+<p>Messages</p>
+<textarea id="mergelog" rows="25" cols="100" style="width: 40em;"></textarea>

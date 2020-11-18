@@ -179,6 +179,18 @@ def findGroup(groupname):
         print(r.text)
         return None
 
+def doRequest(endpoint, params=None):
+    if params is None: params = {}
+    r = rsession.get("%s/%s" % (API_URL, endpoint), headers=HEADERS, params=params)
+    if r.status_code == 404:
+        print(r.text)
+        raise ValueError("Not found.")
+    elif r.status_code == 200:
+        return r.json()
+    else:
+        print(r.text)
+        raise RuntimeError("What happen?")
+
 def lookupGroup(groupName):
     if groupName in GROUP_MAPPING:
         return GROUP_MAPPING[groupName]
@@ -527,3 +539,7 @@ def apipost(api, postdata):
         print(r.status_code, " - ", r.text)
         return False
     return True
+
+def existsItemCategory(cat):
+    if doRequest("/api/ItemClass/SALES-%s" % cat, params=None):
+        return True
