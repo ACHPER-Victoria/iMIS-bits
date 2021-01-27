@@ -369,8 +369,8 @@ h6, .h6 {
 }
 
 .RadMenu_Austin .rmSlide .rmLink:hover, .RadMenu_Austin .rmSlide .rmLink.rmFocused, .RadMenu_Austin .rmSlide .rsmLink:hover, .RadMenu_Austin .rmSlide .rsmLink.rmFocused, .RadMenu_Austin .rmSlide .rsmTwoLevels > .rsmItem > .rsmLink:hover, .RadMenu_Austin .rmSlide .rsmTwoLevels > .rsmItem > .rsmLink.rmFocused {
-    background-color: transparent;
-    color: #000;
+    background-color: #fff;
+    color: #149EAB;
 }
 
 .RadMenu_Austin .rmSlide .rmExpandRight, .RadMenu_Austin .rmSlide .rmGroup a.rmLink.rmExpandRight {
@@ -378,7 +378,6 @@ h6, .h6 {
     background-position: 105% -200px;
     background-repeat: no-repeat;
 }
-
 /*mobile*/
 
 .navbar-toggle.collapsed,
@@ -432,7 +431,6 @@ h6, .h6 {
 }
 
 /***SECONDARY MENU***/
-
 .nav-secondary .sub-nav-head {
     background-color: #149EAB;
     color: #fff;
@@ -442,21 +440,17 @@ h6, .h6 {
     text-align:center;
     text-transform:uppercase;
 }
-
 .nav-secondary {
     background-color: #fff;
     margin-bottom: 0px;
 }
-
 .RadTreeView.RadTreeView_Austin > .rtUL > .rtLI {
     border: 1px solid #cfcfcf;
     border-top: 0px!important;
 }
-
 .RadTreeView.RadTreeView_Austin > .rtUL {
     margin: 0px;
 }
-
 .RadTreeView.RadTreeView_Austin a.rtIn {
     color: #000;
     font-weight: 600!important;
@@ -464,21 +458,17 @@ h6, .h6 {
     transition: all 0.2s ease-in;
     margin: 0;
 }
-
 .RadTreeView.RadTreeView_Austin a.rtIn:hover, .RadTreeView.RadTreeView_Austin a.rtIn:focus, .RadTreeView.RadTreeView_Austin a.rtIn:active {
     background-color: #eaeaea;
 }
-
 .RadTreeView.RadTreeView_Austin .rtSelected > a.rtIn, .RadTreeView.RadTreeView_Austin .child-is-selected.rtIn {
-    background-color: transparent;
+    background-color: #fff;
     color: #149EAB;
 }
-
 .RadTreeView.RadTreeView_Austin .rtLI, .RadTreeView.RadTreeView_Austin .rtTop, .RadTreeView.RadTreeView_Austin .rtMid, .RadTreeView.RadTreeView_Austin .rtBot {
     padding: 0;
     position: relative;
 }
-
 .RadTreeView.RadTreeView_Austin .rtSp,
 .RadTreeView.RadTreeView_Austin .rtPlus,
 .RadTreeView.RadTreeView_Austin .rtMinus {
@@ -492,25 +482,27 @@ h6, .h6 {
     background-position:center;
     background-size:13px;
 }
-
 .RadTreeView.RadTreeView_Austin .rtPlus{
     background-image:url(images/plus-solid.svg);
 }
-
 .RadTreeView.RadTreeView_Austin .rtMinus{
     background-image:url(images/minus-solid.svg);
 }
-
 .RadTreeView.RadTreeView_Austin > .rtUL > .rtLI > .rtUL {
     padding: 0px;
 }
-
 .RadTreeView.RadTreeView_Austin > .rtUL > .rtLI .rtLI .rtIn {
     padding: 5px 25px;
     font-weight:normal!important;
 }
-
-
+a.rtIn {
+  background-color: #fff;
+}
+.RadTreeView.RadTreeView_Austin .rtSelected > a.rtIn:hover,
+.RadTreeView.RadTreeView_Austin .rtSelected > a.rtIn:active,
+.RadTreeView.RadTreeView_Austin .rtSelected > a.rtIn:focus {
+  background-color: #fff;
+}
 /***HOMEPAGE***/
 
 .HomePageFullWidthArea .panel-body,
@@ -903,3 +895,40 @@ span.CheckBoxList {
   width: auto !important;
   height: auto !important;
 }
+/* iMIS 20.3.69 changes 1*/
+/* Second Level */
+.RadMenu.MainMenu .rmTwoLevels .rmLevel1 > .rmItem > .rmLink {
+         color: #fff;
+/*         font-family: [font-family]; */
+         font-size: 18px;
+         font-weight: 550;
+}
+/* Second Level - Hover state */
+.RadMenu.MainMenu  .rmTwoLevels .rmLevel1 > .rmItem > .rmLink:hover,
+.RadMenu.MainMenu .rmTwoLevels .rmLevel1 > .rmItem > .rmLink:focus {
+         background-color: #fff;
+         color: #149EAB;
+}
+/* Second Level */
+.RadMenu.MainMenu .rmSlide a.rmLink {
+         font-weight: 550;
+}
+/* Third Level */
+.RadMenu.MainMenu .rmSlide .rmSlide a.rmLink {
+         color: #fff;
+/*         font-family: [font-family]; */
+         font-size: 18px;
+         font-weight: 550;
+}
+/* Third Level - Hover State */
+.RadMenu.MainMenu .rmSlide .rmSlide a.rmLink:hover,.RadMenu.MainMenu .rmSlide .rmSlide a.rmLink:focus,.RadMenu.MainMenu .rmSlide .rmSlide a.rmLink.rmFocused {
+         background-color: #fff;
+         color: #149EAB;
+}
+@media (min-width: 768px) {
+.RadMenu.MegaDropDownMenuOuter ul.rmLevel1 div.rmSlide,
+.RadMenu.MegaDropDownMenuOuter ul.rmLevel1 ul.rmVertical div.rmSlide {
+display: block !important;
+}
+}
+/* END iMIS 20.3.69 changes 1*/
