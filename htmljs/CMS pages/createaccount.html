@@ -1,0 +1,30 @@
+<script type="text/javascript">
+function addRedirect() {
+  var ret = (new URLSearchParams(window.location.search)).get('returnurl')
+  if (!ret) {
+    // store redirect in URL Params
+    var searchParams = new URLSearchParams(window.location.search);
+    if (!searchParams.get("returnurl") && document.referrer && document.referrer.indexOf("createaccount.aspx") == -1) {
+      searchParams.set("returnurl", document.referrer);
+      window.location.search = searchParams.toString();
+    }
+  }
+}
+function checkSignUp() {
+  // first check if we haven't successfully created a user yet:
+  if (document.getElementsByClassName("UtilitySection UtilityAuthenticationLink")[0].href.indexOf("$ctl01$ctl02") != -1) {
+    return;
+  }
+  // check if we are anonymous. if so, refresh
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value);
+  if (jdata.isAnonymous) {
+    setTimeout(function(){location.href = location.href;}, 1000);
+  }
+  else {
+    // finally if we finally have a successful created user, redirect to new creation wizard.
+    location.href = location.href.replace("/Sign-Up-Flow/createaccount.aspx", "/Sign-Up-Flow/new-wizard.aspx");
+  }
+}
+window.addEventListener("DOMContentLoaded", addRedirect);
+window.addEventListener("DOMContentLoaded", checkSignUp)
+</script>

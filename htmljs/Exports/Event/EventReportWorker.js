@@ -252,23 +252,16 @@ function startProcessingEvent(data) {
   // iterate over registration options
   data["RegistrationOptions"]["$values"].forEach(function(item) {
     regoptions[item["EventFunctionId"]] = item["Name"]
-    var params = [["ProductCode", item["EventFunctionId"]]];
-    for(const rfi of apiIterator("/api/vCsRegFunctions", params)) {
+    var params = [["QueryName", "$/ACHPERVIC/Code-Queries/Exports/Q-CsRegFunctions"],
+                  ["ProductCode", item["EventFunctionId"]]];
+    for(const rfi of apiIterator("/api/query", params)) {
       var rfperson = {};
       rfperson["RegistrationOption"] = item["Name"];
-      rfi["Properties"]["$values"].forEach(function(rfip) {
-        if (rfip["Name"] == "Status") {
-          if (rfip["Value"]) { rfperson["Status"] = rfip["Value"]; }
-          else { rfperson["Status"] = ""; }
-        }
-        else if (rfip["Name"] == "BillToId") { rfperson["BillTo"] = getName(rfip["Value"]); }
-        //else if (rfip["Name"] == "ExtendedAmount") { rfperson["Amount"] = rfip["Value"]["$value"]; }
-        else if (rfip["Name"] == "OrderNumber") {
-          rfperson["OrderNumber"] = rfip["Value"]["$value"];
-          addInvoiceDetails(rfip["Value"]["$value"], rfperson);
-        }
-        else if (rfip["Name"] == "ShipToId") { rfperson["Id"] = rfip["Value"]; }
-      });
+      rfperson["Status"] = rfi["Status"];
+      rfperson["BillTo"] = rfi["BillTo"];
+      rfperson["OrderNumber"] = rfi["OrderNumber"];
+      addInvoiceDetails(rfi["OrderNumber"], rfperson);
+      rfperson["Id"] = rfi["ShipToId"];
       // Now we have some basic info, get all registration information:
       populateRegistration(rfperson, conflicttable, sessionblocks, ORGDATA, FORMDEF);
       REGISTRATIONS.push(rfperson);

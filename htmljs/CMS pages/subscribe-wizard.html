@@ -1,0 +1,14 @@
+<script type="text/javascript">
+function hideLink() {
+  var jdata = JSON.parse(document.getElementById("__ClientContext").value)
+  var linktext = jQuery("h3#SubAcctLink");
+  var buttons = jQuery("[name$='btnNext_2']");
+  if (!jdata["isAnonymous"]) {
+    linktext.css('display', 'none');
+    linktext.css('visibility', 'hidden');
+    buttons.css('display', 'none');
+    buttons.css('visibility', 'hidden');
+  }
+}
+window.addEventListener("DOMContentLoaded", hideLink);
+</script>
