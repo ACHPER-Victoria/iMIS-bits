@@ -17,18 +17,8 @@
   </select>
 <a id="AddGroupButton" class="TextButton addtopalign" href="#" onclick="addUserToGroup();return false;">Add</a></p>
 <p id="GroupActionStatus">&nbsp;</p>
+<script src="/common/Uploaded%20files/Code/utils.js"></script>
 <script type="text/javascript">
-if (!String.prototype.format) {
-  String.prototype.format = function() {
-    var args = arguments;
-    return this.replace(/{(\d+)}/g, function(match, number) {
-      return typeof args[number] != 'undefined'
-        ? args[number]
-        : match
-      ;
-    });
-  };
-}
 var ADDTEMPLATE = `{
       "$type": "Asi.Soa.Membership.DataContracts.GroupMemberData, Asi.Contracts",
       "MembershipDetails": {
@@ -62,6 +52,7 @@ var ADDTEMPLATE = `{
       "JoinDate": "{0}",
       "IsActive": true
   }`;
+token = document.getElementById("__RequestVerificationToken").value;
 
 function RemoveUserFromGroup(id, groupid) {
     // Get groupmemberid
@@ -81,37 +72,22 @@ function RemoveUserFromGroup(id, groupid) {
 function RemoveGroupMember(groupmemberid) {
   var statusbox = jQuery('#GroupActionStatus')
   statusbox.text("Deleting...");
-    // Get groupmemberdetail ID
-    jQuery.ajax("/api/GroupMemberDetail?GroupMemberKey="+groupmemberid,
-    {
-      type : "get",
-      contentType: "application/json",
-      async: true,
-      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
-      success: function(data) {
-        if (data["Count"] < 1) {
-          statusbox.text("Could not find groupmember. Did you already delete? Reload the page to refresh the table.")
-          return;
-        }
-        var gmdid = data["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0]
-        // Delete
-        statusbox.text("Deleting... Please wait...");
-        jQuery.ajax("/api/GroupMemberDetail/"+gmdid,
-        {
-          type : "delete",
-          contentType: "application/json",
-          async: true,
-          headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
-          success: function(ndata) {
-            statusbox.text("Successfully Deleted. Reload the page to refresh the table.");
-            //location.reload();
-          }
-        });
-      },
-      error: function(request, status, error) {
-        statusbox.text("Could not delete. Please ask Lee for help. Give him this please: ({0})".format(request.responseText))
-      }
-    });
+    // Get groupmember obj
+    var result = dorequest("/api/GroupMember/{0}".format(groupmemberid));
+    if (!result[0]) {
+      statusbox.text("Could not find groupmember. Did you already delete? Reload the page to refresh the table.");
+      return;
+    }
+    // remove from GroupMemberDetailDataCollection
+    var obj = result[1];
+    obj["MembershipDetails"]["$values"] = [];
+    result = dorequest("/api/GroupMember/{0}".format(groupmemberid), null, null, [], obj, method="PUT");
+    if (!result[0]) {
+      statusbox.text("Could not delete. Please give lee this:\n{0}".format(result[1]));
+      return;
+    } else {
+      statusbox.text("Deleted. Refresh the popup or page to refresh table.");
+    }
 }
 
 function isUserInGroup(groupID, iMISid) {
