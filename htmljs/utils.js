@@ -158,8 +158,8 @@ function genSubEmailBody(id, email) {
   return body;
 }
 
-function genericProp(item, pname, pval=null) {
-  for (const prop of item["Properties"]["$values"])
+function genericProp(item, pname, pval=null, collection="Properties") {
+  for (const prop of item[collection]["$values"])
   {
     if (prop["Name"] === pname) {
       if (prop["Value"]["$type"]) {
@@ -172,14 +172,14 @@ function genericProp(item, pname, pval=null) {
     }
   }
 }
-function deleteGenericProp(pitem, pname) {
-  var newprops = [];
-  for (const prop of pitem["Properties"]["$values"]) {
+function deleteGenericProp(pitem, pname, collection="Properties") {
+  var newprops = []; // we do this because it's an array.
+  for (const prop of pitem[collection]["$values"]) {
     if (prop["Name"] != pname) {
       newprops.push(prop);
     }
   }
-  pitem["Properties"]["$values"] = newprops;
+  pitem[collection]["$values"] = newprops;
 }
 
 REGISTRATION_BODY = {
