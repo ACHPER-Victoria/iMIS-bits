@@ -46,7 +46,7 @@ def modifyItem(storeobj, type=""):
         exit(1)
 
 COUNT = 0
-if len(argv != 2):
+if len(argv) != 2:
     print("Need comma list of shop types to process. [SAC,TE,WEB,HPE]")
     exit(1)
 for type in argv[1].split(","):
@@ -65,7 +65,7 @@ for type in argv[1].split(","):
                 print(".", end=" ")
                 COUNT += 1
     elif type == "WEB" or type == "HPE":
-        for cls in ("SALES-HPEH", "SALES-HPEH-M", "SALES-WEBREC", "SALES-WEBREC-M"):
+        for cls in ("SALES-HPEH", "SALES-HPEH-M", "SALES-VIC-WREC", "SALES-VIC-WREC-M"):
             for storeobj in apiIterator("/api/Item", (("ItemClassId", cls), ("ItemStatus", "A"))):
                 print(storeobj["Name"].encode("utf-8"))
                 modifyItem(storeobj)
