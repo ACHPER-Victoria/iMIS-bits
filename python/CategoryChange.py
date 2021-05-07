@@ -26,7 +26,7 @@ def modifyItem(storeobj):
     r = requests.put("%s/api/Item/%s" % (API_URL, storeobj["ItemId"]), headers=HEADERS, data=sobj)
     if r.status_code != 201:
         print(r.status_code)
-        print(r.text)
+        print(r.url)
         print("----")
         print(sobj)
         print("----")
