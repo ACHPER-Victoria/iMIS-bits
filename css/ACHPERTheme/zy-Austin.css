@@ -1696,7 +1696,8 @@ input[type="url"],
 input[type="search"],
 input[type="tel"],
 input[type="color"],
-.uneditable-input {
+.uneditable-input,
+.input-fake {
   display: inline-block;
   height: 37px;
   padding: 5px 10px;
@@ -1711,6 +1712,12 @@ input[type="color"],
   transition: border linear 0.2s, -webkit-box-shadow linear 0.2s;
   transition: border linear 0.2s, box-shadow linear 0.2s;
   transition: border linear 0.2s, box-shadow linear 0.2s, -webkit-box-shadow linear 0.2s;
+}
+
+.input-fake:focus-within {
+  border-color: #66afe9;
+  outline: 0;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
 }
 
 @media screen and (prefers-reduced-motion: reduce) {
@@ -1730,7 +1737,8 @@ input[type="color"],
   input[type="search"],
   input[type="tel"],
   input[type="color"],
-  .uneditable-input {
+  .uneditable-input,
+  .input-fake  {
     -webkit-transition: none;
     transition: none;
   }
