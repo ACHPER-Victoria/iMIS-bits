@@ -1,0 +1,19 @@
+<style>
+</style>
+<script type="text/javascript">
+function modifyLabels() {
+  jQuery('label[for="ctl01_TemplateBody_WebPartManager1_gwpciPaymentDetails_ciPaymentDetails_PaymentMethodRadioButtonList_0"]')[0].innerHTML = "Credit Card"
+  jQuery('label[for="ctl01_TemplateBody_WebPartManager1_gwpciPaymentDetails_ciPaymentDetails_PaymentMethodRadioButtonList_1"]')[0].innerHTML = "Purchase Order"
+}
+window.addEventListener("DOMContentLoaded", function() {
+  const targetNode = document.getElementById('ctl01_UserMessagesUpdatePanel');
+  const config = { attributes: false, childList: true, subtree: false };
+  const callback = function(mutationsList, observer) {
+      // Use traditional 'for loops' for IE 11
+      for(const mutation of mutationsList) { if (mutation.type === 'childList') { modifyLabels(); } }
+  };
+  const observer = new MutationObserver(callback);
+  observer.observe(targetNode, config);
+  modifyLabels();
+});
+</script>
