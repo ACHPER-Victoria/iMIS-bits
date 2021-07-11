@@ -211,3 +211,12 @@ function iMISPing() {
   var params = [["limit", 1]];
   var result = dorequest("/api/CsContact", null, null, params);
 }
+
+function iMISaPing() {
+  // async ping
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', "/api/CsContact?limit=1", true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('RequestVerificationToken', document.getElementById("__RequestVerificationToken").value);
+  xhr.send();
+}

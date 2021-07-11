@@ -1,0 +1,22 @@
+
+<script src="/common/Uploaded%20files/Code/sfo/sfo.js"></script>
+
+<style>
+select { margin: 0.2em 0.5em}
+</style>
+<a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
+<h1>DO NOT USE THIS YET</h1>
+<label for="clist">CSV file of SFO data to process:</label>
+<input type="file"
+       id="clist" onchange="handleFiles(this.files)"
+       accept=".csv">
+<p>CSV Columns:
+  <ul id="csvfields"></ul>
+</p>
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Processing CSV</a>
+<p>Progress: <span id="importcount"></span>/<span id="importtotal"></span></p>
+<p>Downloads:
+  <ul id="downlist"></ul>
+</p>
+<p>Messages</p>
+<textarea id="importlog" rows="25" cols="100" style="width: 40em;"></textarea>
