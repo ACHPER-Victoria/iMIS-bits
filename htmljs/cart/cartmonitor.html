@@ -1,49 +1,79 @@
 <script>
 const userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
 
-function getFinEnt(line, combo) {
-  if (combo) {
-    //hell
-  } else {
+function getFinEnt(line) {
 
-  }
 }
 function isCombo(line) {
 
 }
-function processLine() {
-  // return finEnt, or null for multiple fin ent...
+
+// returns request for the object that will hold the entity data...
+function getOrderEntity(line) {
 
 }
-function getLastEnt(values) {
-  var ret = null;
-  while (values && ret == null){
 
-  }
-  cart["ComboOrder"]["Order"]["Lines"]["$values"].forEach()
+function gotAllItems() {
+  // check arguments
+
+
+  if (cart["ComboOrder"]) {
+    var remove = [];
+    var finEnt = processLine(remove);
+    if (finEnt == null) { multipleEnt(); }
+
+    cart["ComboOrder"]["Order"]["Lines"]["$values"].forEach((element, index) => {
+      if (index == cart["ComboOrder"]["Order"]["Lines"]["$values"].length-1) { return; }
+      if (processLine(element) != finEnt) {remove.append(index);}
+    })
+    // remove all removes...
 }
+
+function processInvoices(finEnt) {
+
+  // check for invoices:
+  cart["ComboOrder"]["Invoices"]["$values"].length
+}
+
 function processCart(data) {
   const cart = data["Items"]["$values"][0]
+  var finEnt = null;
   if (cart) {
-    // iterate in reverse... get first FinEnt, compare and remove others...
-    // remove indicies highest to lowest
-    if (cart["ComboOrder"]) {
-      var remove = [];
-      var finEnt = processLine(remove);
-      if (finEnt == null) { multipleEnt(); }
+    // check for Order items:
+    var olines = cart["ComboOrder"]["Order"]["Lines"]["$values"];
+    if (olines.length > 0) {
+      // get last finent
+      olines[olines.length-1]
+    } else {
+      processInvoices(finEnt);
+    }
 
-      cart["ComboOrder"]["Order"]["Lines"]["$values"].forEach((element, index) => {
-        if (index == cart["ComboOrder"]["Order"]["Lines"]["$values"].length-1) { return; }
-        if (processLine(element) != finEnt) {remove.append(index);}
-      })
-      // remove all removes...
+
+
     }
   }
 }
+
+function processCart(data) {
+  kart = data
+}
+// Check last Item
+// Get fin ent of item
+// loop over all other items, get fin ent pass shared list to append to if thing. await last call somehow ??
+// use jQuery.when([list of xHR]).done(then determine what do.)
+// $.when.apply(undefined, requests).done(...)
+// if (requests.length == 1) arguments
+// go over results, check fin ent of each
+
+
 function multipleEnt(item) {
   cartError("MultipleEnt: "+item);
   alert("Error with item, removed from cart.")
 }
+function postcart() {
+  jQuery.ajax("/api/cart/b1b22c78-dfd6-41a0-b772-4b28c4803d9f", {type: 'put', processData:false, data: JSON.stringify(kart["Items"]["$values"][0]), contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}});
+}
+
 function cartError(msg) {
   jQuery.ajax("https://prod-09.australiasoutheast.logic.azure.com:443/workflows/59aa65672bc347eab51c7d5c0d08d2cb/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=iv4Mx970qxOznrJQYxj-4p_xYruDTUciLmd513sANSQ",
   {
@@ -52,7 +82,7 @@ function cartError(msg) {
   })
 }
 function checkcart() {
-  jQuery.ajax("/api/cart?UserId="+userid, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError}});
+  jQuery.ajax("/api/cart?UserId="+userid, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError});
 }
 window.addEventListener("DOMContentLoaded", checkcart);
 </script>
