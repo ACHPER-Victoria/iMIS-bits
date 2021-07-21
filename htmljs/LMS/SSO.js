@@ -335,10 +335,10 @@ function processEncryptUserID(data, status, req, xml, xmlHttpRequest, responseXM
         console.log('gEncryptedUserId =' + gEncryptedUserId + '.');
     }
 
-    createCookie();
+    ATScreateCookie();
 }
 
-function createCookie() {
+function ATScreateCookie() {
     //Create the cookie
     var myDate = new Date();
     myDate.setMonth(myDate.getMonth() + 12);
