@@ -532,6 +532,12 @@ def getPerson(pid):
         print(r.status_code, " - ", r.text)
         return False
     return r.json()
+def delParty(pid):
+    r = rsession.delete("%s/api/Party/%s" % (API_URL, pid), headers=HEADERS)
+    if r.status_code != 200 and r.status_code != 404:
+        print(r.status_code, " - ", r.text)
+        return False
+    return True
 
 def apipost(api, postdata):
     r = rsession.post("%s/api/%s" % (API_URL, api), headers=HEADERS, data=json.dumps(postdata))
