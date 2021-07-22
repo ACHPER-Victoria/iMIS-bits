@@ -12,7 +12,7 @@ var ORDTMPL = {
   "OperationName": "UpdatePricing",
 };
 // Remove this prior to pushing... pls don't forget.
-var FLOWURL = 
+var FLOWURL =
 
 function processInvoices(ds) {
   var finEnt = ds["entity"];
@@ -158,7 +158,7 @@ function getOrderEntity(ds) {
   // dive in to child item if has children
   if (ds["current"] < 0) {
     // proceed to invoice processing...
-    return processInvoices();
+    return processInvoices(ds);
   }
   var line = ds["olines"][ds["current"]];
   var item = resolveChild(line, ds);
