@@ -5,7 +5,8 @@ input[id$="SubmitCartOrderButton"] {
 }
 </style>
 <script>
-const USERID = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+const SELUSERID = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+const USERID = JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"];
 var ORDTMPL = {
   "$type": "Asi.Soa.Commerce.DataContracts.OrderPriceUpdateRequest, Asi.Contracts",
   "EntityTypeName": "Order",
@@ -241,7 +242,7 @@ function cartError(msg) {
   });
 }
 function checkcart() {
-  jQuery.ajax("/api/cart?UserId="+USERID+"&UpdatedBy="+USERID, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError});
+  jQuery.ajax("/api/cart?UserId="+SELUSERID+"&UpdatedBy="+USERID, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError});
 }
 window.addEventListener("DOMContentLoaded", checkcart);
 </script>
