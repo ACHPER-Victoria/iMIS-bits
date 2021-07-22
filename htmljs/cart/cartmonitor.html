@@ -1,88 +1,247 @@
+<style>
+input[id$="SubmitCartOrderButton"] {
+    display: none;
+    visibility: hidden;
+}
+</style>
 <script>
-const userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+const USERID = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+var ORDTMPL = {
+  "$type": "Asi.Soa.Commerce.DataContracts.OrderPriceUpdateRequest, Asi.Contracts",
+  "EntityTypeName": "Order",
+  "OperationName": "UpdatePricing",
+};
+// Remove this prior to pushing... pls don't forget.
+var FLOWURL = 
 
-function getFinEnt(line) {
-
-}
-function isCombo(line) {
-
-}
-
-// returns request for the object that will hold the entity data...
-function getOrderEntity(line) {
-
-}
-
-function gotAllItems() {
-  // check arguments
-
-
-  if (cart["ComboOrder"]) {
-    var remove = [];
-    var finEnt = processLine(remove);
-    if (finEnt == null) { multipleEnt(); }
-
-    cart["ComboOrder"]["Order"]["Lines"]["$values"].forEach((element, index) => {
-      if (index == cart["ComboOrder"]["Order"]["Lines"]["$values"].length-1) { return; }
-      if (processLine(element) != finEnt) {remove.append(index);}
-    })
-    // remove all removes...
-}
-
-function processInvoices(finEnt) {
-
-  // check for invoices:
-  cart["ComboOrder"]["Invoices"]["$values"].length
-}
-
-function processCart(data) {
-  const cart = data["Items"]["$values"][0]
-  var finEnt = null;
-  if (cart) {
-    // check for Order items:
-    var olines = cart["ComboOrder"]["Order"]["Lines"]["$values"];
-    if (olines.length > 0) {
-      // get last finent
-      olines[olines.length-1]
+function processInvoices(ds) {
+  var finEnt = ds["entity"];
+  var ninvoices = [];
+  var removedinvoice = false;
+  ds["ComboOrder"]["Invoices"]["$values"].forEach(function(e, i) {
+    if (finEnt === null) {
+      if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
+        finEnt = e["FinancialEntity"]["FinancialEntity"];
+        ninvoices.push(e);
+      }
     } else {
-      processInvoices(finEnt);
+      // check if invoice matches finEnt
+      if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
+        if (finEnt === e["FinancialEntity"]["FinancialEntity"]) {
+          ninvoices.push(e);
+        } else {
+          // add to message list
+          ds["removenames"].push("Invoice Number "+ e["InvoiceNumber"]);
+        }
+      }
     }
+  });
+  ds["ComboOrder"]["Invoices"]["$values"] = ninvoices
+  // post to order update
+  if (ds["remove"].length > 0) {
+    ORDTMPL["Order"] = ds["ComboOrder"]["Order"];
+    jQuery.ajax("/api/Order/_execute", {
+      type: 'post', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()},
+      processData: false,
+      data: JSON.stringify(ORDTMPL),
+      success: function(d) {
+        getUpdatedOrder(d, ds);
+      }, error: function() { cartError("Error when getting updatingOrder CartId: "+ds["CartId"]); }
+    });
+  } else {
+    prepareCart(ds);
+  }
+}
+function getUpdatedOrder(data, ds) {
+  ds["ComboOrder"]["Order"] = data;
+  prepareCart(ds);
+}
 
+function prepareCart(ds) {
+  if (ds["removenames"].length > 0) {
+    // post cart update
+    jQuery.ajax("/api/cart/"+ds["CartId"], {
+      type: 'put', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()},
+      processData: false,
+      data: JSON.stringify(ds["cart"]),
+      success: function(d) {
+        buildErrorMsg(d, ds);
+      }, error: function() { cartError("Error when getting updatingCart CartId: "+ds["CartId"]); }
+    });
+  } else {
+    var buttons = jQuery("[name$='SubmitCartOrderButton']");
+    buttons.css('display', 'inline-block');
+    buttons.css('visibility', 'visible');
+  }
+}
+function buildErrorMsg(data, ds) {
+  var msg = "Warning: Cannot have multiple branch items in one order. The following items will be removed:\n"
+  msg += ds["removenames"].join("\n");
+  msg += "\n Your cart will now reload."
+  alert(msg);
+  location.reload();
+}
 
-
+function getOrderFinEnt(data) {
+  if (data["Items"]["$values"][0]["ItemFinancialInformation"]["ItemFinancialAccounts"]["Income"]["GLAccount"].hasOwnProperty("FinancialEntity")) {
+    return data["Items"]["$values"][0]["ItemFinancialInformation"]["ItemFinancialAccounts"]["Income"]["GLAccount"]["FinancialEntity"]["FinancialEntityId"];
+  } else {
+    // check if item has a base finent if no GLaccount (bad)
+    if (data["Items"]["$values"][0]["ItemFinancialInformation"]["FinancialEntity"].hasOwnProperty("EntityCode")) {
+      return data["Items"]["$values"][0]["ItemFinancialInformation"]["FinancialEntity"]["EntityCode"];
     }
+    return "";
+  }
+}
+
+function resolveChild(line, ds) {
+  if (line.hasOwnProperty("ChildOrderLines")) {
+    if (ds["curchild"] == -1) { ds["curchild"] = 0; }
+    while (line.hasOwnProperty("ChildOrderLines")) {
+      line = line["ChildOrderLines"]["$values"];
+    }
+    // check if at end of children, if so return null
+    if (ds["curchild"] == line.length) { return null; }
+    else { return line[ds["curchild"]]["Item"]; }
+  } else {
+    return line["Item"];
+  }
+}
+
+function childItem(line, index) {
+  return line["ChildOrderLines"]["$values"][index]["Item"]["ItemCode"];
+}
+function reqItemEntity(code, ds, gotfunc) {
+  jQuery.ajax("/api/item?ItemCode="+code, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: function(d) {
+    gotfunc(d, ds);
+  }, error: function() { cartError("Error when getting finEnt for: "+ code +" CartId: "+ds["CartId"]); }});
+}
+function gotItemEntity(data, ds) {
+  // look for entity, if not found try next...
+  var finEnt = getOrderFinEnt(data);
+  if (finEnt == null || finEnt == "" || typeof finEnt === 'undefined') {
+    if (ds["curchild"] == -1) { ds["current"] -= 1; getOrderEntity(ds); }
+    else {
+      ds["curchild"] +=1; getOrderEntity(ds);
+    }
+  }
+  else {
+    // finally... have finEnt...
+    ds["found"] = ds["current"];
+    ds["current"] = 0; ds["curchild"] = -1;
+    ds["entity"] = finEnt;
+    return setTimeout(buildOrderRemove, 10, ds);
+  }
+}
+function cmpItemEntity(data, ds) {
+  // look for entity, if not found try next...
+  var finEnt = getOrderFinEnt(data);
+  if (finEnt == null || finEnt == "" || typeof finEnt === 'undefined') {
+    if (ds["curchild"] == -1) { ds["current"] += 1; ds["curchild"] = -1; buildOrderRemove(ds); }
+    else { // child item...
+      ds["curchild"] += 1; buildOrderRemove(ds);
+    }
+  }
+  else {
+    // finally... have finEnt... see if it matches:
+    if (finEnt != ds["entity"]) {
+      ds["remove"].push(ds["current"]);
+      ds["removenames"].push(ds["olines"][ds["current"]]["Item"]["Name"]);
+    }
+    ds["current"] = ds["current"] + 1; ds["curchild"] = -1;
+    return setTimeout(buildOrderRemove, 10, ds);
+  }
+}
+
+function getOrderEntity(ds) {
+  // keep calling this until we find an entity...
+  // dive in to child item if has children
+  if (ds["current"] < 0) {
+    // proceed to invoice processing...
+    return processInvoices();
+  }
+  var line = ds["olines"][ds["current"]];
+  var item = resolveChild(line, ds);
+  // if item is null, we couldn't find finEnt in child nodes... assume free event and move on...
+  if (item == null) {
+    ds["current"] -= 1; ds["curchild"] = -1;
+    return setTimeout(getOrderEntity, 10, ds);
+  }
+  // check if item is a free item (doesn't have amount in "Unit price")
+  if (line["UnitPrice"].hasOwnProperty("Amount")) {
+    reqItemEntity(item["ItemCode"], ds, gotItemEntity);
+  } else {
+    // free item, carry on
+    ds["current"] -= 1; ds["curchild"] = -1;
+    return setTimeout(getOrderEntity, 10, ds);
+  }
+}
+
+function purgeOrderLines(ds) {
+  var norders = [];
+  ds["olines"].forEach(function(e,i) {
+    if (ds["remove"].indexOf(i) === -1) {
+      // include this element since it was not in the remove list
+      norders.push(e);
+    }
+  })
+  ds["ComboOrder"]["Order"]["Lines"]["$values"] = norders;
+  return setTimeout(processInvoices, 10, ds);
+}
+
+function buildOrderRemove(ds){
+  if (ds["current"] >= ds["olines"].length) {
+    // done processing orders, now remove them from combo[orders]
+    return setTimeout(purgeOrderLines, 10, ds);
+  }
+  var line = ds["olines"][ds["current"]];
+  var item = resolveChild(line, ds);
+  // if item is null, we couldn't find finEnt in child nodes... assume free event and move on...
+  if (item == null) {
+    ds["current"] += 1; ds["curchild"] = -1;
+    return setTimeout(buildOrderRemove, 10, ds);
+  }
+  // check if item is a free item (doesn't have amount in "Unit price")
+  if (line["UnitPrice"].hasOwnProperty("Amount")) {
+    reqItemEntity(item["ItemCode"], ds, cmpItemEntity);
+  } else {
+    // free item, carry on
+    ds["current"] += 1; ds["curchild"] = -1;
+    return setTimeout(buildOrderRemove, 10, ds);
   }
 }
 
 function processCart(data) {
-  kart = data
-}
-// Check last Item
-// Get fin ent of item
-// loop over all other items, get fin ent pass shared list to append to if thing. await last call somehow ??
-// use jQuery.when([list of xHR]).done(then determine what do.)
-// $.when.apply(undefined, requests).done(...)
-// if (requests.length == 1) arguments
-// go over results, check fin ent of each
-
-
-function multipleEnt(item) {
-  cartError("MultipleEnt: "+item);
-  alert("Error with item, removed from cart.")
-}
-function postcart() {
-  jQuery.ajax("/api/cart/b1b22c78-dfd6-41a0-b772-4b28c4803d9f", {type: 'put', processData:false, data: JSON.stringify(kart["Items"]["$values"][0]), contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}});
+  const cart = data["Items"]["$values"][0]
+  if (cart) {
+    var datastruct = {
+      found: -1,
+      entity: "",
+      current: cart["ComboOrder"]["Order"]["Lines"]["$values"].length-1,
+      curchild: -1,
+      remove: [],
+      removenames: [],
+      olines: cart["ComboOrder"]["Order"]["Lines"]["$values"],
+      ComboOrder: cart["ComboOrder"],
+      ilines: cart["ComboOrder"]["Invoices"]["$values"],
+      cart: cart,
+      CartId: cart["CartId"]
+    }
+    // check for Order items:
+    getOrderEntity(datastruct);
+  }
 }
 
 function cartError(msg) {
-  jQuery.ajax("https://prod-09.australiasoutheast.logic.azure.com:443/workflows/59aa65672bc347eab51c7d5c0d08d2cb/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=iv4Mx970qxOznrJQYxj-4p_xYruDTUciLmd513sANSQ",
+  jQuery.ajax(FLOWURL,
   {
     type:"POST", contentType: 'application/json',
-    data: JSON.stringify({ id: userid, url: window.location.href, msg:msg })
-  })
+    processData: false,
+    data: JSON.stringify({id: USERID, url: location.href, msg: msg })
+  });
 }
 function checkcart() {
-  jQuery.ajax("/api/cart?UserId="+userid, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError});
+  jQuery.ajax("/api/cart?UserId="+USERID+"&UpdatedBy="+USERID, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError});
 }
 window.addEventListener("DOMContentLoaded", checkcart);
 </script>
