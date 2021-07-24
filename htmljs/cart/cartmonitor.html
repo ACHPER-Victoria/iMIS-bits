@@ -5,30 +5,30 @@ input[id$="SubmitCartOrderButton"] {
 }
 </style>
 <script>
-const SELUSERID = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
-const USERID = JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"];
-var ORDTMPL = {
+const ACHSELUSERID = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"];
+const ACHUSERID = JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"];
+var ACHORDTMPL = {
   "$type": "Asi.Soa.Commerce.DataContracts.OrderPriceUpdateRequest, Asi.Contracts",
   "EntityTypeName": "Order",
   "OperationName": "UpdatePricing",
 };
 // Remove this prior to pushing... pls don't forget.
-var FLOWURL =
+var ACHFLOWURL =
 
-function processInvoices(ds) {
+function ACHprocessInvoices(ds) {
   var finEnt = ds["entity"];
   var ninvoices = [];
   var removedinvoice = false;
   ds["ComboOrder"]["Invoices"]["$values"].forEach(function(e, i) {
-    if (finEnt === null) {
+    if (finEnt === null || finEnt === "") {
       if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
-        finEnt = e["FinancialEntity"]["FinancialEntity"];
+        finEnt = e["FinancialEntity"]["FinancialEntityId"];
         ninvoices.push(e);
       }
     } else {
       // check if invoice matches finEnt
       if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
-        if (finEnt === e["FinancialEntity"]["FinancialEntity"]) {
+        if (finEnt === e["FinancialEntity"]["FinancialEntityId"]) {
           ninvoices.push(e);
         } else {
           // add to message list
@@ -40,25 +40,25 @@ function processInvoices(ds) {
   ds["ComboOrder"]["Invoices"]["$values"] = ninvoices
   // post to order update
   if (ds["remove"].length > 0) {
-    ORDTMPL["Order"] = ds["ComboOrder"]["Order"];
+    ACHORDTMPL["Order"] = ds["ComboOrder"]["Order"];
     jQuery.ajax("/api/Order/_execute", {
       type: 'post', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()},
       processData: false,
-      data: JSON.stringify(ORDTMPL),
+      data: JSON.stringify(ACHORDTMPL),
       success: function(d) {
-        getUpdatedOrder(d, ds);
-      }, error: function() { cartError("Error when getting updatingOrder CartId: "+ds["CartId"]); }
+        ACHgetUpdatedOrder(d, ds);
+      }, error: function() { ACHcartError("Error when getting updatingOrder CartId: "+ds["CartId"]); }
     });
   } else {
-    prepareCart(ds);
+    ACHprepareCart(ds);
   }
 }
-function getUpdatedOrder(data, ds) {
+function ACHgetUpdatedOrder(data, ds) {
   ds["ComboOrder"]["Order"] = data;
-  prepareCart(ds);
+  ACHprepareCart(ds);
 }
 
-function prepareCart(ds) {
+function ACHprepareCart(ds) {
   if (ds["removenames"].length > 0) {
     // post cart update
     jQuery.ajax("/api/cart/"+ds["CartId"], {
@@ -66,8 +66,8 @@ function prepareCart(ds) {
       processData: false,
       data: JSON.stringify(ds["cart"]),
       success: function(d) {
-        buildErrorMsg(d, ds);
-      }, error: function() { cartError("Error when getting updatingCart CartId: "+ds["CartId"]); }
+        ACHbuildErrorMsg(d, ds);
+      }, error: function() { ACHcartError("Error when getting updatingCart CartId: "+ds["CartId"]); }
     });
   } else {
     var buttons = jQuery("[name$='SubmitCartOrderButton']");
@@ -75,7 +75,7 @@ function prepareCart(ds) {
     buttons.css('visibility', 'visible');
   }
 }
-function buildErrorMsg(data, ds) {
+function ACHbuildErrorMsg(data, ds) {
   var msg = "Warning: Cannot have multiple branch items in one order. The following items will be removed:\n"
   msg += ds["removenames"].join("\n");
   msg += "\n Your cart will now reload."
@@ -83,7 +83,7 @@ function buildErrorMsg(data, ds) {
   location.reload();
 }
 
-function getOrderFinEnt(data) {
+function ACHgetOrderFinEnt(data) {
   if (data["Items"]["$values"][0]["ItemFinancialInformation"]["ItemFinancialAccounts"]["Income"]["GLAccount"].hasOwnProperty("FinancialEntity")) {
     return data["Items"]["$values"][0]["ItemFinancialInformation"]["ItemFinancialAccounts"]["Income"]["GLAccount"]["FinancialEntity"]["FinancialEntityId"];
   } else {
@@ -95,11 +95,13 @@ function getOrderFinEnt(data) {
   }
 }
 
-function resolveChild(line, ds) {
+function ACHresolveChild(line, ds) {
   if (line.hasOwnProperty("ChildOrderLines")) {
     if (ds["curchild"] == -1) { ds["curchild"] = 0; }
-    while (line.hasOwnProperty("ChildOrderLines")) {
-      line = line["ChildOrderLines"]["$values"];
+    var checkl = line;
+    while (checkl.hasOwnProperty("ChildOrderLines")) {
+      line = checkl["ChildOrderLines"]["$values"];
+      checkl = line[0];
     }
     // check if at end of children, if so return null
     if (ds["curchild"] == line.length) { return null; }
@@ -109,21 +111,21 @@ function resolveChild(line, ds) {
   }
 }
 
-function childItem(line, index) {
+function ACHchildItem(line, index) {
   return line["ChildOrderLines"]["$values"][index]["Item"]["ItemCode"];
 }
-function reqItemEntity(code, ds, gotfunc) {
+function ACHreqItemEntity(code, ds, gotfunc) {
   jQuery.ajax("/api/item?ItemCode="+code, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: function(d) {
     gotfunc(d, ds);
-  }, error: function() { cartError("Error when getting finEnt for: "+ code +" CartId: "+ds["CartId"]); }});
+  }, error: function() { ACHcartError("Error when getting finEnt for: "+ code +" CartId: "+ds["CartId"]); }});
 }
-function gotItemEntity(data, ds) {
+function ACHgotItemEntity(data, ds) {
   // look for entity, if not found try next...
-  var finEnt = getOrderFinEnt(data);
+  var finEnt = ACHgetOrderFinEnt(data);
   if (finEnt == null || finEnt == "" || typeof finEnt === 'undefined') {
-    if (ds["curchild"] == -1) { ds["current"] -= 1; getOrderEntity(ds); }
+    if (ds["curchild"] == -1) { ds["current"] -= 1; ACHgetOrderEntity(ds); }
     else {
-      ds["curchild"] +=1; getOrderEntity(ds);
+      ds["curchild"] +=1; ACHgetOrderEntity(ds);
     }
   }
   else {
@@ -131,16 +133,16 @@ function gotItemEntity(data, ds) {
     ds["found"] = ds["current"];
     ds["current"] = 0; ds["curchild"] = -1;
     ds["entity"] = finEnt;
-    return setTimeout(buildOrderRemove, 10, ds);
+    return setTimeout(ACHbuildOrderRemove, 10, ds);
   }
 }
-function cmpItemEntity(data, ds) {
+function ACHcmpItemEntity(data, ds) {
   // look for entity, if not found try next...
-  var finEnt = getOrderFinEnt(data);
+  var finEnt = ACHgetOrderFinEnt(data);
   if (finEnt == null || finEnt == "" || typeof finEnt === 'undefined') {
-    if (ds["curchild"] == -1) { ds["current"] += 1; ds["curchild"] = -1; buildOrderRemove(ds); }
+    if (ds["curchild"] == -1) { ds["current"] += 1; ds["curchild"] = -1; ACHbuildOrderRemove(ds); }
     else { // child item...
-      ds["curchild"] += 1; buildOrderRemove(ds);
+      ds["curchild"] += 1; ACHbuildOrderRemove(ds);
     }
   }
   else {
@@ -150,31 +152,31 @@ function cmpItemEntity(data, ds) {
       ds["removenames"].push(ds["olines"][ds["current"]]["Item"]["Name"]);
     }
     ds["current"] = ds["current"] + 1; ds["curchild"] = -1;
-    return setTimeout(buildOrderRemove, 10, ds);
+    return setTimeout(ACHbuildOrderRemove, 10, ds);
   }
 }
 
-function getOrderEntity(ds) {
+function ACHgetOrderEntity(ds) {
   // keep calling this until we find an entity...
   // dive in to child item if has children
   if (ds["current"] < 0) {
     // proceed to invoice processing...
-    return processInvoices(ds);
+    return ACHprocessInvoices(ds);
   }
   var line = ds["olines"][ds["current"]];
-  var item = resolveChild(line, ds);
+  var item = ACHresolveChild(line, ds);
   // if item is null, we couldn't find finEnt in child nodes... assume free event and move on...
   if (item == null) {
     ds["current"] -= 1; ds["curchild"] = -1;
-    return setTimeout(getOrderEntity, 10, ds);
+    return setTimeout(ACHgetOrderEntity, 10, ds);
   }
   // check if item is a free item (doesn't have amount in "Unit price")
   if (line["UnitPrice"].hasOwnProperty("Amount")) {
-    reqItemEntity(item["ItemCode"], ds, gotItemEntity);
+    ACHreqItemEntity(item["ItemCode"], ds, ACHgotItemEntity);
   } else {
     // free item, carry on
     ds["current"] -= 1; ds["curchild"] = -1;
-    return setTimeout(getOrderEntity, 10, ds);
+    return setTimeout(ACHgetOrderEntity, 10, ds);
   }
 }
 
@@ -187,32 +189,32 @@ function purgeOrderLines(ds) {
     }
   })
   ds["ComboOrder"]["Order"]["Lines"]["$values"] = norders;
-  return setTimeout(processInvoices, 10, ds);
+  return setTimeout(ACHprocessInvoices, 10, ds);
 }
 
-function buildOrderRemove(ds){
+function ACHbuildOrderRemove(ds){
   if (ds["current"] >= ds["olines"].length) {
     // done processing orders, now remove them from combo[orders]
     return setTimeout(purgeOrderLines, 10, ds);
   }
   var line = ds["olines"][ds["current"]];
-  var item = resolveChild(line, ds);
+  var item = ACHresolveChild(line, ds);
   // if item is null, we couldn't find finEnt in child nodes... assume free event and move on...
   if (item == null) {
     ds["current"] += 1; ds["curchild"] = -1;
-    return setTimeout(buildOrderRemove, 10, ds);
+    return setTimeout(ACHbuildOrderRemove, 10, ds);
   }
   // check if item is a free item (doesn't have amount in "Unit price")
   if (line["UnitPrice"].hasOwnProperty("Amount")) {
-    reqItemEntity(item["ItemCode"], ds, cmpItemEntity);
+    ACHreqItemEntity(item["ItemCode"], ds, ACHcmpItemEntity);
   } else {
     // free item, carry on
     ds["current"] += 1; ds["curchild"] = -1;
-    return setTimeout(buildOrderRemove, 10, ds);
+    return setTimeout(ACHbuildOrderRemove, 10, ds);
   }
 }
 
-function processCart(data) {
+function ACHprocessCart(data) {
   const cart = data["Items"]["$values"][0]
   if (cart) {
     var datastruct = {
@@ -229,20 +231,20 @@ function processCart(data) {
       CartId: cart["CartId"]
     }
     // check for Order items:
-    getOrderEntity(datastruct);
+    ACHgetOrderEntity(datastruct);
   }
 }
 
-function cartError(msg) {
-  jQuery.ajax(FLOWURL,
+function ACHcartError(msg) {
+  jQuery.ajax(ACHFLOWURL,
   {
     type:"POST", contentType: 'application/json',
     processData: false,
-    data: JSON.stringify({id: USERID, url: location.href, msg: msg })
+    data: JSON.stringify({id: ACHUSERID, url: location.href, msg: msg })
   });
 }
-function checkcart() {
-  jQuery.ajax("/api/cart?UserId="+SELUSERID+"&UpdatedBy="+USERID, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: processCart, error: cartError});
+function ACHcheckcart() {
+  jQuery.ajax("/api/cart?UserId="+ACHSELUSERID+"&UpdatedBy="+ACHUSERID, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: ACHprocessCart, error: ACHcartError});
 }
-window.addEventListener("DOMContentLoaded", checkcart);
+window.addEventListener("DOMContentLoaded", ACHcheckcart);
 </script>
