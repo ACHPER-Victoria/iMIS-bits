@@ -1,5 +1,5 @@
 # Example file to talk to the iMIS API for the purpose of integrating for conference registration...
-# See bottom of the file "Example starting execution point" L80 for the start of the example execution
+# See bottom of the file "Example starting execution point" L156 for the start of the example execution
 import getpass
 import requests
 import copy
@@ -67,44 +67,34 @@ REGISTRATION_BODY = { "$type": "Asi.Soa.Events.DataContracts.EventRegistrationRe
     "Waitlist": False
 }
 
-def buildRegData(eventid, regoptid, id):
+def buildRegData(eventid, regoptid, uid):
   body = copy.deepcopy(REGISTRATION_BODY)
   body["EventId"] = eventid
   # The format of this field is EVENTID/REGOPTIONID
   body["RegistrationOptionFunctionId"] = "%s/%s" % (eventid, regoptid)
   body["FunctionId"] = regoptid
-  body["RegistrantId"] = id
-  body["BillTo"] = id
+  body["RegistrantId"] = uid
+  body["BillTo"] = uid
   return body
 
-##################################
-# Example starting execution point
-##################################
-if __file__ == '__main__':
-    ##################
-    ### Initialization
-    ##################
-    # Get site
-    SITE == input("Site (e.g. https://domain.com): ")
-    # Get login credentials
-    USERNAME == input("Username: ")
-    PASSWORD == getpass.getpass()
 
+
+########################
+# Main Example Functions
+########################
+def authenticate(site):
+    # Get login credentials
+    username = input("Username: ")
+    password = getpass.getpass()
     # get authorization token /token   (not: /api/token)
-    formbody = {"Username" : USERNAME, "Password": PASSWORD, "Grant_type": "password"}
-    login_request = requests.post("%s/token" % SITE, headers={'content-type': "application/x-www-form-urlencoded"}, data=formbody)
+    formbody = {"Username" : username, "Password": password, "Grant_type": "password"}
+    login_request = requests.post("%s/token" % site, headers={'content-type': "application/x-www-form-urlencoded"}, data=formbody)
     # reply is json, decode json then get the 'access_token' property and append it to the "Bearer " string.
     # You will then pass this token in all future request headers
     TOKEN = "Bearer %s" % login_request.json()[u'access_token']
-    # These are the headers you will use for all future requests
-    HEADERS = {
-        'content-type': "application/json",
-        "Authorization" : TOKEN
-    }
+    return TOKEN
 
-    ###################
-    # Search for a user
-    ###################
+def search_user(site, headers):
     # Because iMIS has severe flaws at the moment it's possible for someone's contact card
     # "primary email" to be different from their "username".
     # You should start by looking for the username first. If that fails you may want
@@ -112,8 +102,8 @@ if __file__ == '__main__':
 
     # Query the User endpoint for loginid (i.e. email)
     search_username = input("Search username (e.g. test99@domain.com): ")
-    query_params = [["Username", search_username]]
-    result = requests.get("%s/api/User" % SITE, headers=HEADERS, params=query_params)
+    query_params = [["UserName", search_username]]
+    result = requests.get("%s/api/User" % site, headers=headers, params=query_params)
     # You can usually query most parameters of a returned object from the query in the querystring.
     # In this case we are querying the User enpoint object's "Username" paramter.
     print(result.json())
@@ -122,11 +112,67 @@ if __file__ == '__main__':
     # Is the actual User
     # You will want to get the iMIS ID of that result and store, and use it for future queries.
     if (result.json()["Count"] > 0):
-        IMIS_ID = result.json()["Items"]["$values"][0]["UserId"]
+        imis_id = result.json()["Items"]["$values"][0]["UserId"]
+        print ("Found: %s" % imis_id)
     # As a side note, the "findUser()" method will attempt to find a user based on supplied information.
     # You should attempt this if you are unable to find a user from querying the Username directly.
     else:
-        IMIS_ID = findUser(SITE, HEADERS, search_username)
+        imis_id = findUser(site, headers, search_username)
+        if imis_id: print ("Found: %s" % imis_id)
+        else:
+            print("Didn't find user")
+            exit()
+    return imis_id
+
+def check_registration(site, headers, imisID, eventID):
+    # The following API call it formatted EVENTID-USERID, this api used to return 404 if the user had never registered.
+    # Now just check for the presence of the "Status" property.
+    result = requests.get("%s/api/EventRegistration/%s-%s" % (SITE, eventID, imisID), headers=HEADERS)
+    reg_status = None
+    if result.json().get("Status", None) == None:
+        print("User not registered.")
+        reg_status = None
+    elif result.json()["Status"] != 1:
+        print("User registration is cancelled status.")
+        reg_status = False
+    elif result.json()["Status"] == 1:
+        print("User has active registration.")
+        reg_status = True
+        for func in result.json()["Functions"]["$values"]:
+            # Iterate over this property to see all the "functions" user has registered in.
+            # NOTE: "Registration Option" also counts as a "function"
+            # the following is a ternary operation. It just sets the string to "RegOpt: " if
+            # "IsEventRegistrationOption" property is in the func object and truish
+            regopt = "RegOpt: " if func["EventFunction"].get("IsEventRegistrationOption", False) else ""
+            print("%s %s - %s" % (regopt, func["EventFunction"]["EventFunctionCode"], func["EventFunction"]["Name"]))
+    return reg_status
+
+def register_user(site, headers, imisID, eventID):
+    # user has never registered before, register them for "REGOPTION2"
+    data = buildRegData(eventID, "REGOPTION2", imisID)
+    result = requests.post("%s/api/EventRegistration/_execute" % SITE, headers=HEADERS, json=data)
+    return result
+
+##################################
+# Example starting execution point
+##################################
+if __name__ == '__main__':
+    ##################
+    ### Initialization
+    ##################
+    # Get site
+    SITE = input("Site (e.g. https://domain.com): ")
+
+    # These are the headers you will use for all future requests
+    HEADERS = {
+        'content-type': "application/json",
+        "Authorization" : authenticate(SITE)
+    }
+
+    ###################
+    # Search for a user
+    ###################
+    IMIS_ID = search_user(SITE, HEADERS)
     # Now that you have the userID you should attach this to the record on your
     # system so you can easily perform actions on that user without attempting to "find" the user again.
 
@@ -136,31 +182,22 @@ if __file__ == '__main__':
     ################################
     # Okay, we have a userID. We'll look at register a user later on. For now, let's check the registration
     # for that user for a particular event.
-    eventID = input("Event Code: ")
-    # The following API call it formatted EVENTID-USERID, if 404 then user doesn't have a registration
-    result = requests.get("%s/api/EventRegistration/%s-%s" % (SITE, eventID, IMIS_ID), headers=HEADERS)
-    if result.status_code == 404:
-        print("User not registered.")
-    elif result.json()["Status"] != 1:
-        print("User registration is cancelled status.")
-    elif result.json()["Status"] == 1:
-        print("User has active registration.")
-        for (func in result.json()["Functions"]):
-            # Iterate over this property to see all the "functions" user has registered in.
-            # NOTE: "Registration Option" also counts as a "function"
-            # the following is a ternary operation. It just sets the string to "RegOpt: " if
-            # "IsEventRegistrationOption" property is in the func object and truish
-            regopt = "RegOpt: " if func.get("IsEventRegistrationOption", False) else ""
-            print("%s %s - %s" % (func["EventFunctionCode"], func["Name"]))
-
-
-
-
+    EVENT_ID = input("Event Code: ")
+    REG_STATUS = check_registration(SITE, HEADERS, IMIS_ID, EVENT_ID)
 
     ##############################
     # Register a user for an event
     ##############################
-    result = requests.get("%s/api/EventRegistration/_execute" % SITE, headers=HEADERS)
+    if REG_STATUS == None:
+        # user has never registered before, register them for "REGOPTION2"
+        result = register_user(SITE, HEADERS, IMIS_ID, EVENT_ID)
+        if result.status_code == 200:
+            print ("Registered.")
+        else:
+            print ("Error happened")
+            exit()
+
+    # rest TBC
 
     ################################
     # Add sessions to a registration
