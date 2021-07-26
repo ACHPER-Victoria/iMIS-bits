@@ -127,7 +127,7 @@ def search_user(site, headers):
 def check_registration(site, headers, imisID, eventID):
     # The following API call it formatted EVENTID-USERID, this api used to return 404 if the user had never registered.
     # Now just check for the presence of the "Status" property.
-    result = requests.get("%s/api/EventRegistration/%s-%s" % (SITE, eventID, imisID), headers=HEADERS)
+    result = requests.get("%s/api/EventRegistration/%s-%s" % (site, eventID, imisID), headers=headers)
     reg_status = None
     if result.json().get("Status", None) == None:
         print("User not registered.")
@@ -150,7 +150,7 @@ def check_registration(site, headers, imisID, eventID):
 def register_user(site, headers, imisID, eventID):
     # user has never registered before, register them for "REGOPTION2"
     data = buildRegData(eventID, "REGOPTION2", imisID)
-    result = requests.post("%s/api/EventRegistration/_execute" % SITE, headers=HEADERS, json=data)
+    result = requests.post("%s/api/EventRegistration/_execute" % site, headers=headers, json=data)
     return result
 
 ##################################
