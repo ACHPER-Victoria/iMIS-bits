@@ -40,19 +40,19 @@ def findUser(s, h, email):
     # search Person endpoint for email and phone
     # You will probably need to attempt multiple phone queries as we do not
     # normalize phone numbers on the database side
-    query_params = [["Email", email], ["Phone", phone]]
-    r = requests.get("%s/api/User" % s, headers=h, params=query_params)
-    if (result.json()["Count"] == 1):
-        return result.json()["Items"]["$values"][0]["UserId"]
+    query_params = [["Email", email], ["Phone", phone], ["limit", 2]]
+    r = requests.get("%s/api/Person" % s, headers=h, params=query_params)
+    if (r.json()["Count"] == 1):
+        return r.json()["Items"]["$values"][0]["Id"]
     # If there's no results you'll probably want to try various permutations and
     # if there's multiple results... we'll just need to make a new contact card
     # and resolve the duplicate later
     for phone in phone_formats(phone):
         # try each of the phone transformations:
-        query_params = [["Email", email], ["Phone", phone]]
-        r = requests.get("%s/api/User" % s, headers=h, params=query_params)
-        if (result.json()["Count"] == 1):
-            return result.json()["Items"]["$values"][0]["UserId"]
+        query_params = [["Email", email], ["Phone", phone], ["limit", 2]]
+        r = requests.get("%s/api/Person" % s, headers=h, params=query_params)
+        if (r.json()["Count"] == 1):
+            return r.json()["Items"]["$values"][0]["Id"]
 
 REGISTRATION_BODY = { "$type": "Asi.Soa.Events.DataContracts.EventRegistrationRequest, Asi.Contracts",
     "EntityTypeName": "EventRegistration",
@@ -76,8 +76,6 @@ def buildRegData(eventid, regoptid, uid):
   body["RegistrantId"] = uid
   body["BillTo"] = uid
   return body
-
-
 
 ########################
 # Main Example Functions
@@ -113,16 +111,112 @@ def search_user(site, headers):
     # You will want to get the iMIS ID of that result and store, and use it for future queries.
     if (result.json()["Count"] > 0):
         imis_id = result.json()["Items"]["$values"][0]["UserId"]
-        print ("Found: %s" % imis_id)
     # As a side note, the "findUser()" method will attempt to find a user based on supplied information.
     # You should attempt this if you are unable to find a user from querying the Username directly.
     else:
+        print("Didn't find by username, trying email+phone...")
         imis_id = findUser(site, headers, search_username)
-        if imis_id: print ("Found: %s" % imis_id)
-        else:
-            print("Didn't find user")
-            exit()
     return imis_id
+
+PERSON_BODY = {
+    "$type": "Asi.Soa.Membership.DataContracts.PersonData, Asi.Contracts",
+    "Addresses": {
+        "$type": "Asi.Soa.Membership.DataContracts.FullAddressDataCollection, Asi.Contracts",
+        "$values": [
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.FullAddressData, Asi.Contracts",
+                "Address": {
+                    "$type": "Asi.Soa.Membership.DataContracts.AddressData, Asi.Contracts",
+                    "AddressLines": {
+                        "$type": "Asi.Soa.Membership.DataContracts.AddressLineDataCollection, Asi.Contracts",
+                        "$values": [
+                            "", # Street Address Line 1
+                            "" # Street Address Line 2
+                        ]
+                    },
+                    "CityName": "",
+                    "CountryCode": "", # [E.g. "AU"] This is strictly the short country code
+                    "CountryName": "", # [E.g. "Australia"] this is the long country name, however if short code above is provided, this is not needed.
+                    "CountrySubEntityCode": "",  # [E.g. "VIC"] This is strictly the short state code
+                    "CountrySubEntityName": "", # [E.g. "Victoria"] This is the long state name, however if shortcode above is provided, this is not needed.
+                    "PostalCode": ""
+                },
+                "AddressPurpose": "Billing",
+                "Email": "", # This should be the same e-mail address used below
+                "Phone": ""   # This should be their mobile number, or if no mobile number, other number
+            }
+          ]
+      },
+    "Email": "",
+    "PersonName": {
+        "$type": "Asi.Soa.Membership.DataContracts.PersonNameData, Asi.Contracts",
+        "FirstName": "",
+        "LastName": "",
+        "NamePrefix": ""
+    },
+    "Phones": {
+        "$type": "Asi.Soa.Membership.DataContracts.PhoneDataCollection, Asi.Contracts",
+        "$values": [ # OMIT THE OBJECTS HERE THAT YOU DONT NEED.
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "IsPrimary": True,
+                "Number": "", # [E.g. "0400000000" or "+61 400 000 000", etc.] Number goes here as string
+                "PhoneType": "Mobile"
+            },
+            {
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "IsPrimary": False,
+                "Number": "",
+                "PhoneType": "Home"
+            },
+            {  # E.g. if "Work" number is not provided, don't include this block
+                "$type": "Asi.Soa.Membership.DataContracts.PhoneData, Asi.Contracts",
+                "IsPrimary": False,
+                "Number": "",
+                "PhoneType": "Work"
+            }
+        ]
+    },
+    "PrimaryOrganization": {
+        "Name" : "",
+        "Title" : "" # This field is someone's position title, as in their Role/position
+    }
+}
+
+def create_user(site, headers):
+    firstname = input("firstname: ")
+    if not firstname.strip():
+        # cancel and return if no firstname
+        return
+    pobj = copy.deepcopy(PERSON_BODY)
+    pobj["PersonName"]["FirstName"] = firstname
+    pobj["PersonName"]["LastName"] = input("lastname: ")
+    pobj["PrimaryOrganization"]["Name"] = input("organisation: ")
+    pobj["Addresses"]["$values"][0]["Address"]["AddressLines"]["$values"][0] = input("addrline1: ")
+    pobj["Addresses"]["$values"][0]["Address"]["CountrySubEntityCode"] = input("state: ")
+    pobj["Addresses"]["$values"][0]["Address"]["CityName"] = input("city: ")
+    pobj["Addresses"]["$values"][0]["Address"]["PostalCode"] = input("postcode: ")
+    email = input("email: ")
+    pobj["Addresses"]["$values"][0]["Email"] = email
+    pobj["Email"] = email
+    mobile = input("mobile: ")
+    pobj["Phones"]["$values"][0]["Number"] = mobile
+    del pobj["Phones"]["$values"][2]
+    del pobj["Phones"]["$values"][1] # Omit the numbers we aren't using
+
+    result = requests.post("%s/api/Person" % site, headers=headers, json=pobj)
+    if result.status_code != 201:
+        print("Error:")
+        print(result.text)
+        return None
+    else:
+        # id of newly created person is in the Id property
+        return result.json()["Id"]
+
+def iterProp(item, prop, proptype="AdditionalAttributes"):
+    for p in item[proptype]["$values"]:
+        if p["Name"] == prop:
+            return p["Value"]
 
 def check_registration(site, headers, imisID, eventID):
     # The following API call it formatted EVENTID-USERID, this api used to return 404 if the user had never registered.
@@ -146,6 +240,15 @@ def check_registration(site, headers, imisID, eventID):
             regopt = "RegOpt: " if func["EventFunction"].get("IsEventRegistrationOption", False) else ""
             print("%s %s - %s" % (regopt, func["EventFunction"]["EventFunctionCode"], func["EventFunction"]["Name"]))
     return reg_status
+
+def member_status(site, headers, iMISID):
+    result = requests.get("%s/api/Person/%s" % (site, iMISID), headers=headers)
+    if result.status_code != 200:
+        return None, None
+    else:
+        # call helper function to iterate over "AdditionalAttributes" and find property of interest
+        return [iterProp(result.json(), "CustomerTypeCode"), iterProp(result.json(), "PaidThruDate")]
+    # return [membercode, paidthroughdate]
 
 def register_user(site, headers, imisID, eventID):
     # user has never registered before, register them for "REGOPTION2"
@@ -175,7 +278,27 @@ if __name__ == '__main__':
     IMIS_ID = search_user(SITE, HEADERS)
     # Now that you have the userID you should attach this to the record on your
     # system so you can easily perform actions on that user without attempting to "find" the user again.
+    if IMIS_ID: print ("Found: %s" % IMIS_ID)
+    else:
+        print("Didn't find user")
+        ###############
+        # Create a user
+        ###############
+        # if you have exhausted all methods for finding a user, I suppose there's nothing left
+        # but to create a new user:
+        print("Creating user...")
+        IMIS_ID = create_user(SITE, HEADERS)
+    if not IMIS_ID:
+        exit()
 
+    ###############################
+    # Check a information of a user
+    ###############################
+    # We have an ID, now we want to see information about that user. For privacy reasons
+    # you need to be careful about what information you display to a user. Do not use
+    # this informaiton to prefill fields. Only to use for pricing display purposes. e.g. member and until when
+    MEMTYPE, PAID_THROUGH = member_status(SITE, HEADERS, IMIS_ID)
+    print("Type: %s, Paid Through: %s" % (MEMTYPE, PAID_THROUGH))
 
     ################################
     # Check a registration of a user
