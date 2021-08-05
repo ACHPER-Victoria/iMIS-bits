@@ -79,35 +79,33 @@ function ACHbuildErrorMsg(data, ds) {
   var msg = "Warning: Cannot have multiple branch items in one order. The following items will be removed:\n"
   msg += ds["removenames"].join("\n");
   msg += "\n Your cart will now reload."
-  alert(msg);
-  location.reload();
+  setTimeout(function () { window.alert(msg); location.reload(); }, 800,);
 }
 
-function ACHgetOrderFinEnt(data) {
-  if (data["Items"]["$values"][0]["ItemFinancialInformation"]["ItemFinancialAccounts"]["Income"]["GLAccount"].hasOwnProperty("FinancialEntity")) {
-    return data["Items"]["$values"][0]["ItemFinancialInformation"]["ItemFinancialAccounts"]["Income"]["GLAccount"]["FinancialEntity"]["FinancialEntityId"];
+function ACHgetOrderItemFinEnt(data) {
+  if (data["Items"]["$values"][0]["ItemFinancialInformation"]["FinancialEntity"].hasOwnProperty("EntityCode")) {
+    return data["Items"]["$values"][0]["ItemFinancialInformation"]["FinancialEntity"]["EntityCode"];
   } else {
-    // check if item has a base finent if no GLaccount (bad)
-    if (data["Items"]["$values"][0]["ItemFinancialInformation"]["FinancialEntity"].hasOwnProperty("EntityCode")) {
-      return data["Items"]["$values"][0]["ItemFinancialInformation"]["FinancialEntity"]["EntityCode"];
-    }
     return "";
   }
 }
 
 function ACHresolveChild(line, ds) {
   if (line.hasOwnProperty("ChildOrderLines")) {
-    if (ds["curchild"] == -1) { ds["curchild"] = 0; }
-    var checkl = line;
-    while (checkl.hasOwnProperty("ChildOrderLines")) {
-      line = checkl["ChildOrderLines"]["$values"];
-      checkl = line[0];
-    }
-    // check if at end of children, if so return null
-    if (ds["curchild"] == line.length) { return null; }
-    else { return line[ds["curchild"]]["Item"]; }
-  } else {
+    var item = null;
+    // check each child for unit price and quantityOrdered
+    line["ChildOrderLines"]["$values"].some(function(e,i) {
+      if (e["QuantityOrdered"].hasOwnProperty("Amount") && e["UnitPrice"].hasOwnProperty("Amount")) {
+        // potential child
+        item = ACHresolveChild(e, ds);
+        return item;
+      }
+    });
+    return item;
+  } else if (line["QuantityOrdered"].hasOwnProperty("Amount") && line["UnitPrice"].hasOwnProperty("Amount")) {
     return line["Item"];
+  } else {
+    return null;
   }
 }
 
@@ -115,43 +113,35 @@ function ACHchildItem(line, index) {
   return line["ChildOrderLines"]["$values"][index]["Item"]["ItemCode"];
 }
 function ACHreqItemEntity(code, ds, gotfunc) {
-  jQuery.ajax("/api/item?ItemCode="+code, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: function(d) {
+  jQuery.ajax("/api/LegacyBillingItem?ProductCode="+code, {type: 'get', contentType: 'application/json', headers: { 'RequestVerificationToken': jQuery('#__RequestVerificationToken').val()}, success: function(d) {
     gotfunc(d, ds);
   }, error: function() { ACHcartError("Error when getting finEnt for: "+ code +" CartId: "+ds["CartId"]); }});
 }
 function ACHgotItemEntity(data, ds) {
   // look for entity, if not found try next...
-  var finEnt = ACHgetOrderFinEnt(data);
+  var finEnt = ACHgetOrderItemFinEnt(data);
   if (finEnt == null || finEnt == "" || typeof finEnt === 'undefined') {
-    if (ds["curchild"] == -1) { ds["current"] -= 1; ACHgetOrderEntity(ds); }
-    else {
-      ds["curchild"] +=1; ACHgetOrderEntity(ds);
-    }
-  }
-  else {
+    ds["current"] -= 1; ACHgetOrderEntity(ds);
+  } else {
     // finally... have finEnt...
     ds["found"] = ds["current"];
-    ds["current"] = 0; ds["curchild"] = -1;
+    ds["current"] = 0;
     ds["entity"] = finEnt;
     return setTimeout(ACHbuildOrderRemove, 10, ds);
   }
 }
 function ACHcmpItemEntity(data, ds) {
   // look for entity, if not found try next...
-  var finEnt = ACHgetOrderFinEnt(data);
+  var finEnt = ACHgetOrderItemFinEnt(data);
   if (finEnt == null || finEnt == "" || typeof finEnt === 'undefined') {
-    if (ds["curchild"] == -1) { ds["current"] += 1; ds["curchild"] = -1; ACHbuildOrderRemove(ds); }
-    else { // child item...
-      ds["curchild"] += 1; ACHbuildOrderRemove(ds);
-    }
-  }
-  else {
+    ds["current"] += 1; ACHbuildOrderRemove(ds);
+  } else {
     // finally... have finEnt... see if it matches:
     if (finEnt != ds["entity"]) {
       ds["remove"].push(ds["current"]);
       ds["removenames"].push(ds["olines"][ds["current"]]["Item"]["Name"]);
     }
-    ds["current"] = ds["current"] + 1; ds["curchild"] = -1;
+    ds["current"] = ds["current"] + 1;
     return setTimeout(ACHbuildOrderRemove, 10, ds);
   }
 }
@@ -164,19 +154,31 @@ function ACHgetOrderEntity(ds) {
     return ACHprocessInvoices(ds);
   }
   var line = ds["olines"][ds["current"]];
+  return handleLineItem(ACHgetOrderEntity, ACHgotItemEntity, line, ds, -1)
+}
+function handleLineItem(getFUNC, gotFUNC, line, ds, inc) {
   var item = ACHresolveChild(line, ds);
-  // if item is null, we couldn't find finEnt in child nodes... assume free event and move on...
+  // if item is null, we couldn't find finEnt in child nodes... assume free thing and move on...
   if (item == null) {
-    ds["current"] -= 1; ds["curchild"] = -1;
-    return setTimeout(ACHgetOrderEntity, 10, ds);
+    ds["current"] = ds["current"] + inc;
+    return setTimeout(getFUNC, 10, ds);
   }
-  // check if item is a free item (doesn't have amount in "Unit price")
-  if (line["UnitPrice"].hasOwnProperty("Amount")) {
-    ACHreqItemEntity(item["ItemCode"], ds, ACHgotItemEntity);
+  // determine type:
+  if (line["Item"]["ItemId"].indexOf("MEMBERSHIP-") == 0){
+    // Remove first part of <<PRODUCT>>/CODE/SPLIT
+    return ACHreqItemEntity(item["ItemCode"].slice(item["ItemCode"].indexOf("/")+1), ds, gotFUNC);
+  } else if (line["Item"]["ItemId"].indexOf("EVENT-") == 0){
+    return ACHreqItemEntity(item["ItemCode"], ds, gotFUNC);
   } else {
-    // free item, carry on
-    ds["current"] -= 1; ds["curchild"] = -1;
-    return setTimeout(ACHgetOrderEntity, 10, ds);
+    // normal product
+    if (line["UnitPrice"].hasOwnProperty("Amount")) {
+      // check if item is a free item (doesn't have amount in "Unit price")
+      return ACHreqItemEntity(item["ItemCode"], ds, gotFUNC);
+    } else {
+      // free item, carry on
+      ds["current"] = ds["current"] + inc;
+      return setTimeout(getFUNC, 10, ds);
+    }
   }
 }
 
@@ -187,7 +189,7 @@ function purgeOrderLines(ds) {
       // include this element since it was not in the remove list
       norders.push(e);
     }
-  })
+  });
   ds["ComboOrder"]["Order"]["Lines"]["$values"] = norders;
   return setTimeout(ACHprocessInvoices, 10, ds);
 }
@@ -198,20 +200,7 @@ function ACHbuildOrderRemove(ds){
     return setTimeout(purgeOrderLines, 10, ds);
   }
   var line = ds["olines"][ds["current"]];
-  var item = ACHresolveChild(line, ds);
-  // if item is null, we couldn't find finEnt in child nodes... assume free event and move on...
-  if (item == null) {
-    ds["current"] += 1; ds["curchild"] = -1;
-    return setTimeout(ACHbuildOrderRemove, 10, ds);
-  }
-  // check if item is a free item (doesn't have amount in "Unit price")
-  if (line["UnitPrice"].hasOwnProperty("Amount")) {
-    ACHreqItemEntity(item["ItemCode"], ds, ACHcmpItemEntity);
-  } else {
-    // free item, carry on
-    ds["current"] += 1; ds["curchild"] = -1;
-    return setTimeout(ACHbuildOrderRemove, 10, ds);
-  }
+  return handleLineItem(ACHbuildOrderRemove, ACHcmpItemEntity, line, ds, +1);
 }
 
 function ACHprocessCart(data) {
@@ -221,7 +210,6 @@ function ACHprocessCart(data) {
       found: -1,
       entity: "",
       current: cart["ComboOrder"]["Order"]["Lines"]["$values"].length-1,
-      curchild: -1,
       remove: [],
       removenames: [],
       olines: cart["ComboOrder"]["Order"]["Lines"]["$values"],
