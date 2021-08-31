@@ -12,6 +12,7 @@ if (!String.prototype.format) {
 
 importScripts('/common/Uploaded%20files/Code/PDF/pdfkit.standalone.js')
 importScripts('/common/Uploaded%20files/Code/PDF/blob-stream.js')
+TOKEN = null;
 
 onmessage = function(e) {
     const data = e.data;
@@ -22,17 +23,15 @@ onmessage = function(e) {
       case 'MakeCert':
         // console.log('Posting message back to main script');
         // generate CSVdata
-        eventid = arg[0];
-        userid = arg[1];
-        token = arg[2];
-        startProcess(eventid, userid, token);
+        // eventid, userid, prodcode, token
+        TOKEN = arg[3];
+        startProcess(arg[0], arg[1], arg[2]);
         break;
       default:
         console.error('invalid type passed in');
         break;
     }
 }
-
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function formatDate(s, e) {
@@ -72,6 +71,7 @@ function createCert(eventname, start, end, name, ceu, eventid) {
   doc.image(logo, 0, 30, {fit:[841.89, 90], align: 'center', valign: 'center'});
   var normsize = 22;
   var itemsize = 34;
+  var eventsize = 30;
   var spacing = 0.8;
   doc.fontSize(normsize); doc.font('Times-Roman').text('').moveDown(2);
   doc.font('Times-Roman').text('Certificate of Attendence', {align: 'center'});
@@ -83,7 +83,7 @@ function createCert(eventname, start, end, name, ceu, eventid) {
   doc.fontSize(normsize); doc.font('Times-Roman').text('attended', {align: 'center'});
   doc.fontSize(normsize); doc.font('Times-Roman').text('').moveDown(spacing);
 
-  doc.fontSize(itemsize); doc.font('Times-Roman').text(eventname, {align: 'center'});
+  doc.fontSize(eventsize); doc.font('Times-Roman').text(eventname, {align: 'center'});
   doc.fontSize(normsize); doc.font('Times-Roman').text('').moveDown(spacing);
 
   doc.fontSize(normsize); doc.font('Times-Roman').text('on', {align: 'center'});
@@ -102,7 +102,7 @@ function createCert(eventname, start, end, name, ceu, eventid) {
     // send back to main thread.
     postMessage({
       type: "MakeCert",
-      data: [blob, eventid, slugify(name)],
+      data: [blob, slugify(eventid), slugify(name)],
     });
     postMessage({type: "progress", data: 6,});
   });
@@ -125,7 +125,7 @@ function dorequest(url, func, errfunc = null, type=null) {
   if (type != null) { xhr.responseType = type; }
   xhr.open('GET', url, false); // NO ASYNC because I'm not good.
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('RequestVerificationToken', token);
+  xhr.setRequestHeader('RequestVerificationToken', TOKEN);
   xhr.onload = function() {
     if (xhr.status === 200) {
       if (type == null) { func(JSON.parse(xhr.responseText)); }
@@ -139,34 +139,13 @@ function dorequest(url, func, errfunc = null, type=null) {
   xhr.send();
 }
 
-function getName(pid) {
-  var name = "";
-  dorequest("/api/PartySummary/{0}".format(pid), function(data) {
-      name = data["Name"];
-  });
-  return name;
-}
-
-function startProcess(eventid, userid, token) {
+function startProcess(eventid, userid, prodcode) {
   // Steps to genrate PDF
   // Get Event date(s) and title
   var start = null;
-  var estart = null;
   var end = null;
-  var eend = null;
   var name = null;
   var eventname = null;
-  dorequest("/api/Event/{0}".format(eventid),
-    function(eventdata) {
-      if (eventdata["Name"]) {eventname = eventdata["Name"]; }
-      if (eventdata["StartDateTime"]) { estart = eventdata["StartDateTime"]; }
-      if (eventdata["EndDateTime"]) { eend = eventdata["EndDateTime"]; }
-  });
-  postMessage({type: "progress", data: 1,});
-  if (estart == null || eend == null || eventname == null) {
-    certlog("Invalid event data(dt).");
-    return;
-  }
   // Get user registration for hours
   var orderid = null;
   dorequest("/api/EventRegistration/{0}-{1}".format(eventid, userid),
@@ -183,49 +162,41 @@ function startProcess(eventid, userid, token) {
       if (regdata["Registrant"] && regdata["Registrant"]["PersonName"]) {
         name = "{0} {1}".format(regdata["Registrant"]["PersonName"]["FirstName"],
           regdata["Registrant"]["PersonName"]["LastName"]);
-      } else {
-      certlog("Unknown person.");
-      }
-      // build date data...
-      for (let fn of regdata["Functions"]["$values"]) {
-        if (start === null || fn["EventFunction"]["StartDateTime"] < start) {
-          start = fn["EventFunction"]["StartDateTime"];
-        }
-        if (end === null || fn["EventFunction"]["EndDateTime"] > end) {
-          end = fn["EventFunction"]["EndDateTime"];
-        }
-      }
-      if (!end || !start) { end = eend; start = estart;}
+      } else { certlog("Unknown person."); }
   });
-  postMessage({type: "progress", data: 2,});
+  postMessage({type: "progress", data: 1});
   console.log(orderid);
   if (orderid == null || name == null) {
     return;
   }
   var ceu = null;
-  dorequest("/api/iqa?QueryName=$/ACHPERVIC/Events/Event Certificate CEU&parameter={0}".format(orderid), function(orderdata) {
-    // hunt for CEU row
-    var found = false;
-    var eject = false;
-    orderdata["Items"]["$values"].forEach(function(oidata){
-      if (eject) {return;}
-      oidata["Properties"]["$values"].forEach(function(odata) {
-        if (eject) {return;}
-        if ((odata["Name"] == "CEU_AWARDED") && (odata["Value"]["$value"] > 0.0)) {
-          if (found) { certlog("Data error (mc)."); ceu = null; eject = true; }
-          else { ceu = odata["Value"]["$value"]; }
-        }
-      });
-    })
-    if (ceu == null) {
-      certlog("No data(ce).");
-    }
+  // get custom title and date data first from function then event...
+  dorequest("/api/query?QueryName=$/ACHPERVIC/Events/Event Certificate CEU&PRODUCT_CODE={0}&ORDER_NUMBER={1}".format(prodcode, orderid),
+    function(funcdata) {
+      var item = funcdata["Items"]["$values"][0];
+      ceu = item["CEU_AWARDED"];
+      eventname = item["Title"];
+      start = item["BeginDate"];
+      end = item["EndDate"];
   });
+  postMessage({type: "progress", data: 2});
+  if (start == null || end == null) {
+    dorequest("/api/Event/{0}".format(eventid),
+      function(eventdata) {
+        if (start == null) {start = eventdata["StartDateTime"]; }
+        if (end == null) { end = eventdata["EndDateTime"]; }
+    });
+  }
   postMessage({type: "progress", data: 3,});
-  if (ceu == null) {
+  if (start == null || end == null || eventname == null) {
+    certlog("Invalid event data(dt).");
     return;
   }
-  createCert(eventname, start, end, name, ceu, eventid);
+  if (ceu == null) {
+    certlog("No data(ce).");
+    return;
+  }
+  createCert(eventname, start, end, name, ceu, prodcode);
 }
 
 function slugify(text, separator="-") {

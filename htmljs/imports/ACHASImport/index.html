@@ -1,15 +1,22 @@
-
-<script src="/common/Uploaded%20files/Code/sfo/sfo.js"></script>
-
+<script src="/common/Uploaded%20Files/Code/as/as.js"></script>
 <style>
 select { margin: 0.2em 0.5em}
 </style>
+
+
 <a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
 <h1>DO NOT USE THIS YET</h1>
 <label for="clist">CSV file of SFO data to process:</label>
 <input type="file"
        id="clist" onchange="handleFiles(this.files)"
        accept=".csv">
+<select id="fundingcat">
+ <option value="AS">Active Schools</option>
+ <option value="PEB">PE Boost</option>
+</select>
+<p> <input type="checkbox" id="removeold" name="removeold" value="removeold"> Remove contacts not on this spreadsheet for this funding
+category (e.g. anyone not on this spreadsheet will be removed from the school) </p>
+<p> <input type="checkbox" id="dryrun" name="dryrun" value="dryrun" checked> Don't make any changed and just output found/notfound orgs. </p>
 <p>CSV Columns:
   <ul id="csvfields"></ul>
 </p>

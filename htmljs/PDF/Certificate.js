@@ -9,7 +9,7 @@ if (!String.prototype.format) {
     });
   };
 }
-var myWorker = new Worker('/common/Uploaded%20Files/Code/PDF/CertificateWorker-27.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/PDF/CertificateWorker-31.js');
 
 function certlog(s) {
   var ta = jQuery('textarea#certlog');
@@ -48,13 +48,14 @@ function runCert() {
   jQuery('span#progress').text("0");
   var eventid = (new URLSearchParams(window.location.search)).get("EventKey")
   var userid = (new URLSearchParams(window.location.search)).get("UID")
+  var prodcode = (new URLSearchParams(window.location.search)).get("ProdCode")
   if (userid == null)
     userid = JSON.parse(document.getElementById("__ClientContext").value)["selectedPartyId"]
-  if (!eventid || !userid) {
+  if (!eventid || !userid || !prodcode) {
     certlog("Invalid event data.");
     return;
   }
-  workerMaker('MakeCert', [eventid, userid, document.getElementById("__RequestVerificationToken").value]);
+  workerMaker('MakeCert', [eventid, userid, prodcode, document.getElementById("__RequestVerificationToken").value]);
 }
 
 const workerMaker = (type, arg) => {

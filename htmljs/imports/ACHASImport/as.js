@@ -10,7 +10,7 @@ if (!String.prototype.format) {
   };
 }
 
-var myWorker = new Worker('/common/Uploaded%20Files/Code/vs/vsWorker.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/as/asWorker21.js');
 
 function importlog(s) {
   var ta = jQuery('textarea#importlog');
@@ -47,6 +47,7 @@ myWorker.onmessage = function(e) {
     handleFilesDone(data);
   } else if( type === 'endProcessing') {
     endProcessing(data);
+  } else if( type === 'ping') {
   } else {
     console.error('An Invalid type has been passed in');
   }
@@ -71,9 +72,9 @@ function handleFiles(flist) {
   CSVFILE = flist[0]
   workerMaker('getHeaders', [document.getElementById("__RequestVerificationToken").value, CSVFILE]);
 }
-FIELDS = [["School Type", "schooltype"], ["SFOE Band", "sfoeband"], ["School no.", "schoolno"],
-  ["SFOE Index", "sfoeindex"], ["Region name", "region"], ["LGA Name", "lga"],
-  ["Area Name", "area"], ["SSV Region Abbreviation", "ssvregabb"], ["SSV Region", "ssvregion"]];
+FIELDS = [["iMIS ID", "imisid"], ["School no.", "SchoolNum"], ["School Type", "Type"], ["SFOE Band", "Rating"],
+  ["SFOE Index", "Index"], ["Region name", "Region"], ["LGA Name", "LGA"],
+  ["Area Name", "Area"], ["SSV Region Abbreviation", "ssvregabb"], ["SSV Region", "SSV_REGION"]];
 function handleFilesDone(headers) {
   var listelem = jQuery("#csvfields");
   FIELDS.forEach(function(i) {
@@ -97,33 +98,34 @@ function startProcessing() {
   if (CSVFILE === null) { importlog("No file selected"); return; }
   // get headerfields
   disableUI(true, true);
-  var fields = {
-    "schooltype" : jQuery("#schooltype").val(),
-    "sfoeband" : jQuery("#sfoeband").val(),
-    "schoolno" : jQuery("#schoolno").val(),
-    "sfoeindex" : jQuery("#sfoeindex").val(),
-    "region" : jQuery("#region").val(),
-    "lga" : jQuery("#lga").val(),
-    "area" : jQuery("#area").val(),
-    "ssvregabb" : jQuery("#ssvregabb").val(),
-    "ssvregion" : jQuery("#ssvregion").val(),
+  var fields = {};
+  for (const v of FIELDS) {
+    fields[v[1]] = jQuery("#"+v[1]).val()
   }
+  var removeold = jQuery("#removeold").is(":checked");
+  var dry = jQuery("#dryrun").is(":checked");
+  var fundingcat = jQuery("#fundingcat").val();
   jQuery('#downlist li').remove();
   workerMaker('startProcessing', [document.getElementById("__RequestVerificationToken").value,
-    CSVFILE, fields]);
+    CSVFILE, fields, fundingcat, removeold, dry]);
 }
-DOWNLINKS = ["NotFound", "NotUnique", "Found"]; //nf, nu, found
+DOWNLINKS = ["NotFound", "Found"]; //nf, found
 function endProcessing(data) {
   var downlist = document.getElementById("downlist");
   for(var i=0;i<DOWNLINKS.length;i++) {
-    if (data[i]) { data[i] = "\ufeff"+data[i]; }
-    var csvData = new Blob([data[i]], {type: 'text/csv;charset=utf-8;'});
-    var exportFilename = "{0}-{1}.csv".format(DOWNLINKS[i], (new Date()).toISOString().slice(0,16))
     var node = document.createElement("li");
-    var link = document.createElement('a');
-    link.href = window.URL.createObjectURL(csvData);
-    link.setAttribute('download', exportFilename);
-    link.innerHTML = exportFilename;
+    if (data[i] != false) {
+      data[i] = "\ufeff"+data[i];
+      var csvData = new Blob([data[i]], {type: 'text/csv;charset=utf-8;'});
+      var exportFilename = "{0}-{1}.csv".format(DOWNLINKS[i], (new Date()).toISOString().slice(0,16))
+      var link = document.createElement('a');
+      link.href = window.URL.createObjectURL(csvData);
+      link.setAttribute('download', exportFilename);
+      link.innerHTML = exportFilename;
+    } else {
+      var link = document.createElement('span');
+      link.innerHTML = DOWNLINKS[i]+" - 0";
+    }
     node.appendChild(link);
     downlist.appendChild(node);
     disableUI(false, true);
@@ -131,7 +133,7 @@ function endProcessing(data) {
 }
 
 function doPing() {
-  iMISaPing();
+  workerMaker('ping', [document.getElementById("__RequestVerificationToken").value]);
 }
 
 window.addEventListener("DOMContentLoaded", () => { setTimeout(doPing, 50000); });
