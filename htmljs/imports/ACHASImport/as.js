@@ -10,7 +10,7 @@ if (!String.prototype.format) {
   };
 }
 
-var myWorker = new Worker('/common/Uploaded%20Files/Code/as/asWorker21.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/as/asWorker24.js');
 
 function importlog(s) {
   var ta = jQuery('textarea#importlog');

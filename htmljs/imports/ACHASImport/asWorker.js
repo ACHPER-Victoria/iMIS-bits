@@ -46,7 +46,7 @@ onmessage = function(e) {
 }
 
 function getUserFromID(id) {
-  var result = dorequest("/api/CsContact/{0}".format(id));
+  var result = dorequest("/api/Person/{0}".format(id));
   if (result[0]) { return id; }
   else { return null; }
 }
@@ -231,6 +231,14 @@ function startProcessing(f, fields, fundingcat, removeold, dry) { // CSVFILE, fi
         importlog("MISSING School No. FIELD.");
         return;
       }
+      // If iMIS ID see that it exists.
+      var ifield = fields["imisid"];
+      if (ifield) {
+        var uimisid = r["data"][0][ifield].trim();
+        if (uimisid && getUserFromID(uimisid) == null) {
+          importlog("WARNING: iMIS ID Not found for: {0}".format(uimisid));
+        }
+      }
       // look for all schools with school no and type of GOVT
       var schoolno = r["data"][0][field].trim()
       if (schoolno) {
@@ -388,7 +396,7 @@ ASCONTACT = {
                 "Name": "Funding_Person_ID",
                 "Value": {
                     "$type": "System.Int32",
-                    "$value": 32762
+                    "$value": 0
                 }
             },
             {
@@ -423,7 +431,7 @@ function buildContactData(id, ent_type, contactid, id_prop, fundingcat) {
   genericProp(obj, "ID", id);
   obj["EntityTypeName"] = ent_type
   if (contactid) {
-    if (!isNaN(contactid)) { genericProp(obj, "id_prop", parseInt(contactid, 10)); }
+    if (!isNaN(contactid)) { genericProp(obj, id_prop, parseInt(contactid, 10)); }
   }
   genericProp(obj, "FundingCategory", fundingcat);
   return obj;
