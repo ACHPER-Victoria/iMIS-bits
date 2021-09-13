@@ -219,8 +219,9 @@ def iterProp(item, prop, proptype="AdditionalAttributes"):
             return p["Value"]
 
 def check_registration(site, headers, imisID, eventID):
-    # The following API call it formatted EVENTID-USERID, this api used to return 404 if the user had never registered.
-    # Now just check for the presence of the "Status" property.
+    # The following API call is formatted EVENTID-USERID
+    # Check for the presence of the "Status" property to see if a user has ever been registered for this event.
+    # if status property exists, this user is registered or cancelled. If not exists, user has never registered.
     result = requests.get("%s/api/EventRegistration/%s-%s" % (site, eventID, imisID), headers=headers)
     reg_status = None
     if result.json().get("Status", None) == None:
@@ -242,12 +243,15 @@ def check_registration(site, headers, imisID, eventID):
     return reg_status
 
 def member_status(site, headers, iMISID):
-    result = requests.get("%s/api/Person/%s" % (site, iMISID), headers=headers)
+    result = requests.get("%s/api/CsContact/%s" % (site, iMISID), headers=headers)
     if result.status_code != 200:
         return None, None
     else:
-        # call helper function to iterate over "AdditionalAttributes" and find property of interest
-        return [iterProp(result.json(), "CustomerTypeCode"), iterProp(result.json(), "PaidThruDate")]
+        # call helper function to iterate over "Properties" and find property of interest
+        return [iterProp(result.json(), "MemberType", "Properties"),
+            iterProp(result.json(), "PaidThrough", "Properties"),
+            iterProp(result.json(), "RenewMonths", "Properties")["$value"]
+        ]
     # return [membercode, paidthroughdate]
 
 def register_user(site, headers, imisID, eventID):
@@ -255,6 +259,44 @@ def register_user(site, headers, imisID, eventID):
     data = buildRegData(eventID, "REGOPTION2", imisID)
     result = requests.post("%s/api/EventRegistration/_execute" % site, headers=headers, json=data)
     return result
+
+
+CANCEL_BODY = {
+  "$type": "Asi.Soa.Core.DataContracts.GenericExecuteRequest, Asi.Contracts",
+  "OperationName": "CancelEventRegistration",
+  "EntityTypeName": "EventRegistration",
+  "Parameters": {
+    "$type": "System.Collections.ObjectModel.Collection`1[[System.Object, mscorlib]], mscorlib",
+    "$values": [
+        {
+             "$type": "System.String",
+             "$value": "EventRegistrationId" # replace this with the EVENTID-USERID
+        },
+        {
+            "$type": "Asi.Soa.Commerce.DataContracts.OrderLineData, Asi.Contracts",
+            "ChildOrderLines": {
+                "$type": "Asi.Soa.Commerce.DataContracts.OrderLineDataCollection, Asi.Contracts",
+                "$values": [
+                    {
+                        "$type": "Asi.Soa.Commerce.DataContracts.OrderLineData, Asi.Contracts"
+                    }
+                ]
+            }
+        }
+    ]
+  }
+}
+def cancel_registration(site, headers, regid):
+    pobj = copy.deepcopy(CANCEL_BODY)
+    pobj["Parameters"]["$values"][0]["$value"] = regid
+    result = requests.post("%s/api/EventRegistration/_execute" % site, headers=headers, json=pobj)
+    if result.status_code != 200:
+        print("Error:")
+        print(result.text)
+        return None
+    else:
+        print("Cancelled registration for ID: %s" % regid)
+
 
 ##################################
 # Example starting execution point
@@ -297,8 +339,16 @@ if __name__ == '__main__':
     # We have an ID, now we want to see information about that user. For privacy reasons
     # you need to be careful about what information you display to a user. Do not use
     # this informaiton to prefill fields. Only to use for pricing display purposes. e.g. member and until when
-    MEMTYPE, PAID_THROUGH = member_status(SITE, HEADERS, IMIS_ID)
-    print("Type: %s, Paid Through: %s" % (MEMTYPE, PAID_THROUGH))
+    MEMTYPE, PAID_THROUGH, MONTHS = member_status(SITE, HEADERS, IMIS_ID)
+    print("Type: %s, Paid Through: %s, MONTHS: %s" % (MEMTYPE, PAID_THROUGH, MONTHS))
+    if (MEMTYPE in ("VICF", "VICR", "VICS")):
+        # check if monthly, allow membership pricing if current monthly member.
+        if (MONTHS == 1.0):
+            print("Allowed membership pricing.")
+        else:
+            # Otherwise, check PAID_THROUGH date includes conference date
+            if (PAID_THROUGH > "2021-11-25T00:00:00"):
+                print("Allowed membership pricing.")
 
     ################################
     # Check a registration of a user
@@ -325,7 +375,7 @@ if __name__ == '__main__':
     ################################
     # Add sessions to a registration
     ################################
-    # TBC
+
 
     ######################
     ## Modify registration
@@ -335,3 +385,6 @@ if __name__ == '__main__':
     ######################
     ## Cancel registration
     ######################
+    # To cancel a registration you simply need to post the template body to this API endpoint
+    # however you need to get the "EventRegistrationId" first, which is just EVENTID-USERID
+    # So you should probably do "CheckRegistration" as above to make sure it's an active registration, then cancel it.
