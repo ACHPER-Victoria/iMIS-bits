@@ -932,3 +932,8 @@ display: block !important;
 }
 }
 /* END iMIS 20.3.69 changes 1*/
+
+
+.container, .SliderPage1 {
+  max-width: 1280px; /* make a lil wider... */
+}
