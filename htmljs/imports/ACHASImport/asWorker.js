@@ -29,6 +29,10 @@ onmessage = function(e) {
         token = arg[0];
         getHeaders(arg[1]);
         break;
+      case 'getFundingCats':
+        token = arg[0];
+        getFundingCats();
+        break;
       case 'startProcessing':
         token = arg[0];
         startProcessing(arg[1], arg[2], arg[3], arg[4], arg[5]); // CSVFILE, fields, fundingcat, removeold
@@ -199,6 +203,19 @@ function updateOrgData(id, fields, row, fundingcat, removeold) {
         return false;
       }
     } else { console.log("Skipped: Org: {0}, ID: {1}".format(id, values["imisid"]))}
+  } else {
+    // check if there exists a funding contact there, if not make a dummy one.
+    var params = [["ID", id], ["FundingCategory", fundingcat]];
+    result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, params);
+    if (result[0] && result[1]["Count"] == 0) {
+      data = buildContactData(id, "AVIC_AS_FUNDING_CONTACT", 0, "Funding_Person_ID", fundingcat);
+      result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, [], data, "POST");
+      if (!result[0]) {
+        importlog("uO AS FC Error: {0}".format(values["imisid"]));
+        console.log(result[1]);
+        return false;
+      }
+    }
   }
   if (values["achid"]) {
     data = buildContactData(id, "AVIC_AS_ACH_CONTACT", contactid, "ACH_Staff_ID", fundingcat);
@@ -407,9 +424,7 @@ ASCONTACT = {
         ]
     }
 }
-//values["schoolno"], values["schooltype"],
-  // values["sfoeband"], values["sfoeindex"], values["region"],
-  // values["lga"], values["area"], values["ssvregion"]
+
 function buildOrgData(id, values) {
   var obj = JSON.parse(JSON.stringify(ASDATA));
   genericProp(obj, "ID", id);
@@ -424,7 +439,7 @@ function setOrgData(obj, values) {
   setgenericProp(obj, "Region", values["Region"]);
   setgenericProp(obj, "LGA", values["LGA"]);
   genericProp(obj, "Area", values["Area"]);
-  genericProp(obj, "SSV_REGION", values["SSV_REGION"]);
+  genericProp(obj, "SSV_REGION", values["ssvregabb"]);
 }
 function buildContactData(id, ent_type, contactid, id_prop, fundingcat) {
   var obj = JSON.parse(JSON.stringify(ASCONTACT));
@@ -435,4 +450,16 @@ function buildContactData(id, ent_type, contactid, id_prop, fundingcat) {
   }
   genericProp(obj, "FundingCategory", fundingcat);
   return obj;
+}
+
+function getFundingCats() {
+  var params = [["TableName", "AVIC_AS_CATEGORY"]]
+  var values = [];
+  for(let i of apiIterator("/api/GenTable", params)) {
+    values.push([i["Code"], i["Description"]]);
+  }
+  postMessage({
+    type: "getFundingCats",
+    data: values,
+  });
 }

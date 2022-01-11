@@ -10,7 +10,7 @@ if (!String.prototype.format) {
   };
 }
 
-var myWorker = new Worker('/common/Uploaded%20Files/Code/as/asWorker24.js');
+var myWorker = new Worker('/common/Uploaded%20Files/Code/as/asWorker.js');
 
 function importlog(s) {
   var ta = jQuery('textarea#importlog');
@@ -47,6 +47,8 @@ myWorker.onmessage = function(e) {
     handleFilesDone(data);
   } else if( type === 'endProcessing') {
     endProcessing(data);
+  } else if( type === 'getFundingCats') {
+    gotFundingCats(data);
   } else if( type === 'ping') {
   } else {
     console.error('An Invalid type has been passed in');
@@ -74,7 +76,7 @@ function handleFiles(flist) {
 }
 FIELDS = [["iMIS ID", "imisid"], ["School no.", "SchoolNum"], ["School Type", "Type"], ["SFOE Band", "Rating"],
   ["SFOE Index", "Index"], ["Region name", "Region"], ["LGA Name", "LGA"],
-  ["Area Name", "Area"], ["SSV Region Abbreviation", "ssvregabb"], ["SSV Region", "SSV_REGION"]];
+  ["Area Name", "Area"], ["SSV Region Abbreviation", "ssvregabb"]];
 function handleFilesDone(headers) {
   var listelem = jQuery("#csvfields");
   FIELDS.forEach(function(i) {
@@ -135,5 +137,14 @@ function endProcessing(data) {
 function doPing() {
   workerMaker('ping', [document.getElementById("__RequestVerificationToken").value]);
 }
+function getCats() {
+  workerMaker('getFundingCats', [document.getElementById("__RequestVerificationToken").value]);
+}
+function gotFundingCats(values) {
+  var s = jQuery("#fundingcat");
+  for (let [code,desc] of values) {
+    s.append(new Option(desc, code));
+  }
+}
 
-window.addEventListener("DOMContentLoaded", () => { setTimeout(doPing, 50000); });
+window.addEventListener("DOMContentLoaded", () => { setTimeout(doPing, 50000); getCats(); });
