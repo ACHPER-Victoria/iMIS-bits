@@ -1,0 +1,9 @@
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  let u = new URL(document.getElementById("BreadCrumb").children[0].children[0].children[0].href);
+  let sp = new URLSearchParams(u.search);
+  sp.delete("CommunityKey");sp.delete("communitykey"); // sigh...
+  u.search = sp;
+  document.getElementById("BreadCrumb").children[0].children[0].children[0].href = u.href;
+});
+</script>
