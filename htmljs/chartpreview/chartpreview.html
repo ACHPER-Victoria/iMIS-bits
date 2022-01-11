@@ -1,0 +1,18 @@
+<script>
+var prefix = "/Common/Uploaded files/Resources/ChartSnippets/"
+function ACHmodpage() {
+  // get URL fragment
+  var frag = window.location.hash.substring(1);
+  if (frag != "") {
+    document.getElementById("cchartdownlink").href = prefix+frag;
+    var nnode = document.getElementById("cchartembed").cloneNode(true);
+    nnode.src = prefix+frag+"#navpanes=0";
+    document.getElementById("cchartembed").parentElement.replaceChild(nnode, document.getElementById("cchartembed"));
+  }
+}
+window.addEventListener("DOMContentLoaded", ACHmodpage);
+</script>
+
+<p>Is this resource useful to you? Purchase the <a href="[@]public/shop/Curriculum Support Charts.aspx" class="">full charts here</a><br>
+(Document not loading below? <a id="cchartdownlink" href="/Common/Uploaded files/Resources/ChartSnippets/pleasewait.pdf" class="">Click here to open</a>)</p>
+<embed id="cchartembed" src="/Common/Uploaded files/Resources/ChartSnippets/pleasewait.pdf#navpanes=0" type="application/pdf" width="100%" height="800px">
