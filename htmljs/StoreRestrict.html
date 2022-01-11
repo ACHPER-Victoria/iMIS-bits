@@ -13,7 +13,7 @@ input[name$="AddToCart"] {
     visibility: hidden;
 }
 </style>
-<script type="text/javascript">
+<script>
 function activateStore() {
   var jdata = JSON.parse(document.getElementById("__ClientContext").value)
   var buttons = jQuery("[name$='AddToCart']");
@@ -26,7 +26,7 @@ function activateStore() {
       headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
       success: function(data) {
         if (data["Count"] == 0) {
-          buttons.replaceWith( '<a class="TextButton" href="mailto:internet@internet?subjectetc='+jdata['loggedInPartyId']+'">Access Now</a>');
+          buttons.replaceWith( '<a class="TextButton" href="mailto:achper@achper.vic.edu.au?subject=Access%20VCE%20Resources%20-%20ID%20'+jdata['loggedInPartyId']+'&body=Please%20send%20this%20email%20and%20we%20will%20update%20your%20user%20ID%20('+jdata['loggedInPartyId']+')%20so%20you%20can%20order%20VCE%20resources%20online%2C%20usually%20the%20same%20day.%0D%0AThis%20is%20a%20screening%20process%20to%20ensure%20only%20current%20teachers%20access%20these%20resources.%0D%0AYou%20can%20also%20call%209274%208900%20for%20an%20immediate%20response.">Request Access</a>');
         }
         buttons.css('display', 'inline-block');
         buttons.css('visibility', 'visible');
