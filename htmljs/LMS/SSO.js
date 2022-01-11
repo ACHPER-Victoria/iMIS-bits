@@ -1,20 +1,29 @@
 <script type='text/javascript'>
-  if (!String.prototype.includes) {
-    String.prototype.includes = function(search, start) {
-      'use strict';
 
-      if (search instanceof RegExp) {
-        throw TypeError('first argument must not be a RegExp');
-      }
-      if (start === undefined) { start = 0; }
-      return this.indexOf(search, start) !== -1;
-    };
+    if (!String.prototype.includes) {
+        String.prototype.includes = function (search, start) {
+            'use strict'
+
+            if (search instanceof RegExp) {
+                throw TypeError('first argument must not be a RegExp')
+            }
+            if (start === undefined) { start = 0 }
+            return this.indexOf(search, start) !== -1
+        };
   }
 
-    /* ------------------------------------------------------------------ */
-    /* Client specific settings */
+/****************************************************************************************************/
+/* ATS - Association Technology Solutions                                                           */
+/* This may not be copied, used, or redistribted without the expressed written consent of ATS       */
+/*info@atsol.org - www.atsol.org                                                                    */
+/* Copyright 2020                                                                                   */
+/****************************************************************************************************/
 
-    /* Debuge mode. set to true for testing only. For production it should be false. This will allow you to have the system pause  each step of the way */
+/****************************************************************************************************/
+/* ATS Settings                                                                                     */
+/****************************************************************************************************/
+
+    /* Debug mode. set to true for testing only. For production it should be false. This will allow you to have the system pause  each step of the way */
     const debugMode = false;
 
     /* Login Redirect Page url */
@@ -23,8 +32,12 @@
     /* url to the ATS webservice */
     var ATSWebServiceUrl = 'https://achper.atsservices.net/wsmoodle.asmx';
 
+   /* This is the list of valid domain names that the server will return tokens to. This is a comma delimited list and the domain in the return url must end in one of these domains.*/
+   var REDIRECTDOMAINS = "achper,atsol.org,moodle.com,learnbook.com.au";
 
-    /* End of client specific settings                                             */
+/****************************************************************************************************/
+/* ATS Settings                                                                                     */
+/****************************************************************************************************/
     /* Do not edit anything below this line                               */
     /* ------------------------------------------------------------------ */
 
@@ -50,6 +63,7 @@
     getUsername();
 
 function getUsername() {
+       if (debugMode) console.log('Making call to ASI membership webservice at ' + getUserNamePath);
         jQuery.ajax(getUserNamePath, {
             type: 'post',
             contentType: 'application/x-www-form-urlencoded',
@@ -116,20 +130,34 @@ function processBridgeSettings(data, status, req, xml, xmlHttpRequest, responseX
         console.log('Got success response from IQA. Returned settings data:');
         console.log(data);
     }
+
     /* Use the returned JSON settings data to set the appropriate variables */
     var INCOMING_URL_PARAM = '';
-    var nodeAccess = false;
+
+    /* Firefox and Chrome (and possibly early versions of IE) */
     var bridgeSettings = data.documentElement.children;
-    if (typeof(bridgeSettings) === "undefined") bridgeSettings = data.Items;
+
     if (typeof(bridgeSettings) === "undefined") {
-      bridgeSettings = data.documentElement.childNodes; // handle modern IE
-      nodeAccess = true;
+        /* At least IE 11 doesn't see innerHTML, but does have textContent */
+        bridgeSettings = data.documentElement.childNodes;
+
     }
+
+
     for (var i = 0; i < bridgeSettings.length; i++) {
-        if (bridgeSettings[i].nodeType !== 1) continue;
-        var settingName = bridgeSettings[i].tagName.toUpperCase();
-        var settingValue = bridgeSettings[i].innerHTML;
-        if (nodeAccess) settingValue = bridgeSettings[i].textContent;
+
+        var settingName = bridgeSettings[i].nodeName.toUpperCase();
+
+        var settingValue;
+
+        if (typeof(req.responseXML.children) !== "undefined") {
+            /* Firefox and Chrome (and possibly early versions of IE) */
+            settingValue = bridgeSettings[i].innerHTML;
+        } else {
+            /* At least IE 11 doesn't see innerHTML, but does have textContent */
+            settingValue = bridgeSettings[i].textContent;
+        }
+
 
         if (debugMode) {
             console.log('i is ' + i + '.');
@@ -324,11 +352,13 @@ function encryptUserID() {
 }
 
 function processEncryptUserID(data, status, req, xml, xmlHttpRequest, responseXML) {
-    // check for undefined children (modern IE)
+
     if (typeof(req.responseXML.children) !== "undefined") {
-      gEncryptedUserId = req.responseXML.children[0].innerHTML;
+        /* Firefox and Chrome (and possibly early versions of IE) */
+        gEncryptedUserId = req.responseXML.children[0].innerHTML;
     } else {
-      gEncryptedUserId = req.responseXML.firstChild.textContent;
+        /* At least IE 11 doesn't see innerHTML, but does have textContent */
+        gEncryptedUserId = req.responseXML.firstChild.textContent;
     }
 
     if (debugMode) {
@@ -363,17 +393,28 @@ function processUserRedirect() {
         redirectURL = redirectURL + "course/view.php?id=" + ucid;
       }
     }
-    if (!redirectURL.includes('?'))
-        redirectURL = redirectURL + "?";
-    else
-        redirectURL = redirectURL + "&";
-    redirectURL = redirectURL + ssoGatewayUrlParam + "=" + encodeURI(gEncryptedUserId);
 
-    if (debugMode) {
-        console.log("redirectURL=" + redirectURL);
+    if (!redirectURL.includes('?'))
+    {
+        redirectURL = redirectURL + "?";
+    }
+    else
+    {
+        redirectURL = redirectURL + "&";
     }
 
-    window.location.replace(redirectURL);
+    redirectURL = redirectURL + ssoGatewayUrlParam + "=" + encodeURI(gEncryptedUserId);
+
+        /* Validate the return domain */
+        if (isValidRedirectDomain(redirectURL ))
+        {
+            if (debugMode) console.log('Redirecting user to ' + redirectURL + '.');
+            window.location = redirectURL ;
+        }
+        else
+        {
+            alert("Unauthorized redirect");
+        }
 }
 
 
@@ -389,5 +430,46 @@ function getParameterByName(name, url) {
             return decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
+
+function isValidRedirectDomain(url)
+{
+    /* If the variable is blank, don't check for restrictions */
+    if (REDIRECTDOMAINS)
+    {
+        /* Split the redirect domains by comma */
+        var domains = REDIRECTDOMAINS.toLowerCase().split(",");
+        var urlHost = extractHostname(url);
+
+        for (var i = 0; i < domains.length; i++) {
+
+            if ((urlHost.toLowerCase()).endsWith(domains[i]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    return true;
+}
+
+
+function extractHostname(url) {
+    var hostname;
+    //find & remove protocol (http, ftp, etc.) and get hostname
+
+    if (url.indexOf("//") > -1) {
+        hostname = url.split('/')[2];
+    }
+    else {
+        hostname = url.split('/')[0];
+    }
+
+    //find & remove port number
+    hostname = hostname.split(':')[0];
+    //find & remove "?"
+    hostname = hostname.split('?')[0];
+
+    return hostname;
+}
 
 </script>
