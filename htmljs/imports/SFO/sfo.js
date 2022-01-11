@@ -73,10 +73,10 @@ function handleFiles(flist) {
   CSVFILE = flist[0]
   workerMaker('getHeaders', [document.getElementById("__RequestVerificationToken").value, CSVFILE]);
 }
-FIELDS = [["ID", "oid"], ["Org Name", "orgname"], ["Type", "schooltype"],
-  ["Sector", "sector"], ["Ranking No.", "rankingno"], ["School No.", "schoolno"],
-  ["Metro/Regional", "locality"], ["Region", "region"], ["Suburb", "suburb"],
-  ["SFO %", "sfoperct"], ["Sub Region", "subregion"]];
+FIELDS = [["ID", "oid"], ["School Type", "SchoolType"], ["Email", "Email"],
+  ["Sector", "Sector"], ["Ranking No.", "SFORanking"], ["School No.", "SchoolNumber"],
+  ["Metro/Regional", "Locality"], ["Region", "Region"], ["LGA", "LGA"],
+  ["SFO %", "SFOPercentage"], ["Sub Region", "SubRegion"]];
 function handleFilesDone(headers) {
   var listelem = jQuery("#csvfields");
   FIELDS.forEach(function(i) {
@@ -100,35 +100,31 @@ function startProcessing() {
   if (CSVFILE === null) { importlog("No file selected"); return; }
   // get headerfields
   disableUI(true, true);
-  var fields = {
-    "oid" : jQuery("#oid").val(),
-    "orgname" : jQuery("#orgname").val(),
-    "schooltype" : jQuery("#schooltype").val(),
-    "sector" : jQuery("#sector").val(),
-    "rankingno" : jQuery("#rankingno").val(),
-    "schoolno" : jQuery("#schoolno").val(),
-    "locality" : jQuery("#locality").val(),
-    "region" : jQuery("#region").val(),
-    "suburb" : jQuery("#suburb").val(),
-    "sfoperct" : jQuery("#sfoperct").val(),
-    "subregion" : jQuery("#subregion").val(),
+  var fields = {};
+  for (const v of FIELDS) {
+    fields[v[1]] = jQuery("#"+v[1]).val()
   }
   jQuery('#downlist li').remove();
   workerMaker('startProcessing', [document.getElementById("__RequestVerificationToken").value,
     CSVFILE, fields]);
 }
-DOWNLINKS = ["NotFound", "NotUnique", "Found"]; //nf, nu, found
+DOWNLINKS = ["NotFound", "Found"]; //nf, found
 function endProcessing(data) {
   var downlist = document.getElementById("downlist");
   for(var i=0;i<DOWNLINKS.length;i++) {
-    if (data[i]) { data[i] = "\ufeff"+data[i]; }
-    var csvData = new Blob([data[i]], {type: 'text/csv;charset=utf-8;'});
-    var exportFilename = "{0}-{1}.csv".format(DOWNLINKS[i], (new Date()).toISOString().slice(0,16))
     var node = document.createElement("li");
-    var link = document.createElement('a');
-    link.href = window.URL.createObjectURL(csvData);
-    link.setAttribute('download', exportFilename);
-    link.innerHTML = exportFilename;
+    if (data[i] != false) {
+      data[i] = "\ufeff"+data[i];
+      var csvData = new Blob([data[i]], {type: 'text/csv;charset=utf-8;'});
+      var exportFilename = "{0}-{1}.csv".format(DOWNLINKS[i], (new Date()).toISOString().slice(0,16))
+      var link = document.createElement('a');
+      link.href = window.URL.createObjectURL(csvData);
+      link.setAttribute('download', exportFilename);
+      link.innerHTML = exportFilename;
+    } else {
+      var link = document.createElement('span');
+      link.innerHTML = DOWNLINKS[i]+" - 0";
+    }
     node.appendChild(link);
     downlist.appendChild(node);
     disableUI(false, true);

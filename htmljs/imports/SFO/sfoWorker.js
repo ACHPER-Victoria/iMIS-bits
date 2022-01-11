@@ -49,34 +49,73 @@ function getOrgFromID(id) {
   if (result[0]) { return id; }
   else { return null; }
 }
-function getOrgFromName(name) {
-  var params = [["limit", 1], ["Company", "eq:{0}".format(name.trim())], ["IsCompany", "true"]];
-  var result = dorequest("/api/CsContact", null, null, params);
+function getOrgsFromNo(schoolno) {
+  var params = [["Sector", "GOVERNMENT"], ["SchoolNumber", "eq:{0}".format(schoolno.trim())]];
+  var ids = [];
+  for(let i of apiIterator("/api/AO_OrganisationsData", params)) {
+    // check id to make sure org type... nevermind, there was only 2 and they were weirds.
+    ids.push(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0])
+  }
+  return ids;
+}
+function OrgDataAppend(data, id) {
+  var result = dorequest("/api/Organization/{0}".format(id));
   if (result[0]) {
-    if (result[1]["TotalCount"] > 1) {
-      return false;
-    } else if (result[1]["TotalCount"] < 1){
-      if (name.includes("-")) {
-        return getOrgFromName(name.replace("-", '\u2013'));
-      }
-      else {
-        return null;
+    data["ORG"] = result[1]["Name"];
+    data["ORGID"] = id;
+  }
+  return data;
+}
+
+function setgenericProp(item, pname, value) {
+  if (value != null && !Number.isNaN(value)) {
+    if (GENMAP.hasOwnProperty(pname)) {
+      var val = checkGenValue(GENMAP[pname], value);
+      if (val) {
+        genericProp(item, pname, val);
       }
     } else {
-      return result[1]["Items"]["$values"][0]["Identity"]["IdentityElements"]["$values"][0];
+      genericProp(item, pname, value);
     }
   }
-  else {
-    importlog("G: Error ({0}) {1}".format(name, result[1]));
-    return null;
+}
+const GENMAP = {"Region": "REGION", "LGA" : "AVIC_LGA", "SubRegion" : "SUBREGION",
+  "Locality" : "METROREGIONAL", "SchoolType" : "SCHOOLTYPE"};
+const GENCODES = {}; // ["TABLE"][importdata] = code
+const MISSING = {};
+function buildGenMaps() {
+  for (const v of Object.values(GENMAP)) {
+    // /GenTable/?TableName=AVIC_AS_RATING
+    var params = [["TableName", v]]
+    for(let i of apiIterator("/api/GenTable", params)) {
+      if (!GENCODES.hasOwnProperty(v)) { GENCODES[v] = {}; }
+      GENCODES[v][i["Description"].toUpperCase()] = i["Code"];
+    }
   }
+}
+function checkGenValue(table, value) {
+  value = value.toUpperCase();
+  if (GENCODES.hasOwnProperty(table) && GENCODES[table].hasOwnProperty(value)) {
+    return GENCODES[table][value];
+  } else {
+    // log missing
+    if (!MISSING.hasOwnProperty(table)){
+      MISSING[table] = new Set();
+    }
+    if (!MISSING[table].has(value)) {
+      MISSING[table].add(value)
+      importlog("gV Error ({0}): {1}".format(table, value));
+    }
+  }
+  return false;
 }
 
 function mapRow(fields, row) {
   var mr = {};
   for (const [key, value] of Object.entries(fields)) {
-    if (row[value]) {
-      mr[key] = row[value].trim();
+    var val = row[value];
+    if (val != null) {
+      mr[key] = val.trim();
     } else {
       mr[key] = null;
     }
@@ -98,16 +137,21 @@ function updateOrgData(id, fields, row) {
 
   if (!result[0]) {
     // build data obj
-    data = buildOrgData(id, values["locality"], values["region"],
-      values["schoolno"], values["schooltype"], values["sector"],
-      values["sfoperct"], values["rankingno"], values["subregion"]);
+    if (values["Sector"] == "" && values["SchoolNumber"] == "") {
+      console.log("{0} - no data, no change".format(id));
+      return;
+    }
+    data = buildOrgData(id, values);
     method = "POST";
-    url = url.slice(0, -4);
+    url = rsplit(url, "/", 1)[0];
   } else {
     data = result[1];
-    setOrgData(data, values["locality"], values["region"],
-      values["schoolno"], values["schooltype"], values["sector"],
-      values["sfoperct"], values["rankingno"], values["subregion"]);
+    // check if same data...
+    if (genericProp(data, "Sector") == values["Sector"] && genericProp(data, "SchoolNumber") == values["SchoolNumber"]) {
+      console.log("{0} - has data, no change".format(id));
+      return;
+    }
+    setOrgData(data, values);
     method = "PUT";
     url = url.format(id);
   }
@@ -115,7 +159,9 @@ function updateOrgData(id, fields, row) {
   result = dorequest(url, null, null, [], data, method);
   if (!result[0]) {
     importlog("uO Error ({0}): {1}".format(id, result[1]));
+    return false;
   }
+
 }
 
 function startProcessing(f, fields) {
@@ -127,81 +173,56 @@ function startProcessing(f, fields) {
   Papa.parse(f, {
     "header": true,
     "step": function(r,p) {
-      var id = null;
+      var ids = [];
       // iMIS ID available. Only process iMIS ID rows...
       if (fields["oid"]) {
         var field = fields["oid"];
         var imisid = r["data"][0][field].trim()
         if (imisid) {
-          id = getOrgFromID(imisid);
+          ids.push(getOrgFromID(imisid));
         }
       } else {
-        // blindly match orgname... figure out smarter way later...
-        var field = fields["orgname"];
-        if (!field) {
-          importlog("MISSING ORG NAME FIELD.");
-          return;
-        }
-        var orgname = r["data"][0][field].trim()
-        if (orgname) {
-          orgname = orgname.replace("  ", " ");
-          id = getOrgFromName(r["data"][0][field].trim());
-          // if not found attempt to append the suburb
-          if (id === null || id === false) {
-            field = fields["suburb"];
-            if (field && r["data"][0][field].trim()) {
-              var suburb = r["data"][0][field].trim();
-              id = getOrgFromName("{0} - {1}".format(orgname, suburb));
-              // If still not found, try adding "Campus" to the end...
-              if (id === null || id === false) { id = getOrgFromName("{0} - {1} Campus".format(orgname, suburb)); }
-            }
-          }
-          // If still not found, try variants: +" Incorporated"
-          if (id === null || id === false) {
-            id = getOrgFromName("{0} {1}".format(orgname, "Incorporated"));
-          }
-          // If still not found, take off the last word and insert a hyphen in there. (then try 2 words)
-          if (id === null || id === false) {
-            var namesplit = rsplit(orgname, " ", 1);
-            id = getOrgFromName("{0} - {1}".format(namesplit[0], namesplit[1]));
-            if (id === null || id === false) {
-              var namesplit = rsplit(orgname, " ", 2);
-              id = getOrgFromName("{0} - {1}".format(namesplit[0], namesplit.slice(1).join(" ")));
-            }
-          }
-          // try replace "Grammar" with "Grammar School"
-          if ((id === null || id === false) && orgname.includes("Grammar") && !orgname.includes("Grammar School")) {
-            id = getOrgFromName(orgname.replace("Grammar", "Grammar School"));
-          }
+        // get all IDs that match school number
+        importlog("BAD ROW {0}".format(r));
+        p.abort();
+        return;
+        var sfield = fields["SchoolNum"];
+        if (!sfield) { importlog("MISSING School No. FIELD."); return; }
+        var schoolno = r["data"][0][field].trim()
+        if (schoolno) {
+          ids = getOrgsFromNo(r["data"][0][field].trim());
         }
       }
       // process ID if found
-      if (id === null) {
+      if (ids === null || ids.length === 0) {
         // not found
         notfound.push(r["data"][0])
-      } else if (id === false){
-        // not unique
-        notunique.push(r["data"][0])
       } else {
         // found
-        updateOrgData(id, fields, r["data"][0])
-        found.push(r["data"][0]);
+        // updateOrgData(id, fields, r["data"][0])
+        for (let id of ids) {
+          found.push(OrgDataAppend(Object.assign({}, r["data"][0]), id));
+          if (updateOrgData(id, fields, r["data"][0]) === false) {
+            p.abort();
+            return;
+          }
+        }
       }
       updateProgress(++row)
     },
     "complete": function(r,p) {
-      endProcessing(notfound, notunique, found);
+      endProcessing(notfound, found);
     },
     "skipEmptyLines": true,
     "fastMode": false,
   });
 
 }
-function endProcessing(nf, nu, found) {
+function endProcessing(nf, found) {
   // create CSV data for args
   postMessage({
     type: "endProcessing",
-    data: [Papa.unparse(nf), Papa.unparse(nu), Papa.unparse(found)],
+    data: [Papa.unparse(nf), Papa.unparse(found)],
   });
 }
 
@@ -255,26 +276,6 @@ var ORGDATA = {
   "$type": "Asi.Soa.Core.DataContracts.GenericEntityData, Asi.Contracts",
   "EntityTypeName": "AO_OrganisationsData",
   "PrimaryParentEntityTypeName": "Party",
-  "Identity": {
-    "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
-    "EntityTypeName": "AO_OrganisationsData",
-    "IdentityElements": {
-      "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
-      "$values": [
-        ""
-      ]
-    }
-  },
-  "PrimaryParentIdentity": {
-    "$type": "Asi.Soa.Core.DataContracts.IdentityData, Asi.Contracts",
-    "EntityTypeName": "Party",
-    "IdentityElements": {
-      "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
-      "$values": [
-          ""
-      ]
-    }
-  },
   "Properties": {
     "$type": "Asi.Soa.Core.DataContracts.GenericPropertyDataCollection, Asi.Contracts",
     "$values": [
@@ -285,7 +286,7 @@ var ORGDATA = {
       },
       {
         "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
-        "Name": "AccountsEmail",
+        "Name": "LGA",
         "Value": ""
       },
       {
@@ -339,26 +340,21 @@ var ORGDATA = {
     ]
   }
 }
-function buildOrgData(id, locality, region, schoolno, schooltype, sector,
-  sfoperct, sforank, subregion) {
+
+function buildOrgData(id, values) {
   var obj = JSON.parse(JSON.stringify(ORGDATA));
-  obj["Identity"]["IdentityElements"]["$values"][0] = id
-  obj["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] = id
   genericProp(obj, "ContactKey", id);
-  setOrgData(obj, locality, region, schoolno, schooltype, sector,
-    sfoperct, sforank, subregion);
+  setOrgData(obj, values);
   return obj;
 }
-function setOrgData(obj, locality, region, schoolno, schooltype, sector,
-  sfoperct, sforank, subregion) {
-  if (locality !== null) { genericProp(obj, "Locality", locality.toUpperCase()); }
-  if (region !== null) { genericProp(obj, "Region", region.toUpperCase()); }
-  if (schoolno !== null) { genericProp(obj, "SchoolNumber", schoolno); }
-  if (schooltype !== null) { genericProp(obj, "SchoolType", schooltype.toUpperCase()); }
-  if (sector !== null) { genericProp(obj, "Sector", sector.toUpperCase()); }
-  if (sfoperct !== null) { genericProp(obj, "SFOPercentage", sfoperct); }
-  if (sforank !== null) {
-    if (!isNaN(sforank)) { genericProp(obj, "SFORanking", parseInt(sforank, 10)); }
-  }
-  if (subregion !== null) { genericProp(obj, "SubRegion", subregion); }
+function setOrgData(obj, values) {
+  setgenericProp(obj, "SchoolType", values["SchoolType"]);
+  setgenericProp(obj, "Sector", values["Sector"]);
+  setgenericProp(obj, "SchoolNumber", values["SchoolNumber"]);
+  setgenericProp(obj, "SFORanking", parseInt(values["SFORanking"], 10));
+  setgenericProp(obj, "Locality", values["Locality"]);
+  setgenericProp(obj, "Region", values["Region"]);
+  setgenericProp(obj, "LGA", values["LGA"]);
+  setgenericProp(obj, "SFOPercentage", values["SFOPercentage"]);
+  setgenericProp(obj, "SubRegion", values["SubRegion"]);
 }
