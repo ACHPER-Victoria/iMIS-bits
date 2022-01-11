@@ -1,0 +1,25 @@
+<script>
+function ACHreplaceIDwithName(index, element){
+  var iid = element.innerText;
+  jQuery.ajax("/api/Person/"+iid,
+  {
+    type : "get",
+    contentType: "application/json",
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      var a = document.createElement('a');
+      a.appendChild(document.createTextNode("" + iid + " - " + data["PersonName"]["FullName"]));
+      var ph = [];
+      for (const p of data["Phones"]["$values"]) { ph.push(p["PhoneType"] + " - " + p["Number"]);}
+      a.title = ph.join(", ")
+      a.href = "/party.aspx?ID="+parseInt(iid);
+      element.replaceChildren(a);
+    },
+    error: function(data) { }
+  });
+}
+window.addEventListener("DOMContentLoaded", function() {
+  jQuery('table#ctl01_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_SchoolFundingContacts_multipleInstanceList_Grid1_ctl00 tbody td:nth-child(2)').each(ACHreplaceIDwithName);
+  jQuery('table#ctl01_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_AVICStaffcontact_multipleInstanceList_Grid1_ctl00 tbody td:nth-child(2)').each(ACHreplaceIDwithName);
+});
+</script>
