@@ -518,8 +518,8 @@ def accessAttrib(item, pname, pval=None):
 def addAttrib(item, pval):
     item["AdditionalAttributes"]["$values"].append(pval)
 
-def updateAttrib(item, url):
-    iid = item["Id"]
+def updateAttrib(item, url, iidparam="Id"):
+    iid = item[iidparam]
     r = rsession.put("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS, data=json.dumps(item))
     if r.status_code != 200 and r.status_code != 201:
         print(r.status_code, " - ", r.text)
