@@ -1,0 +1,18 @@
+<script src="/common/Uploaded%20files/Code/ASExports/ASReports.js"></script>
+
+<label for="startdate">Include data from date:</label>
+<input type="date" id="startdate" name="trip-start"
+       value="2020-01-01"
+       min="2018-01-01" max="2040-12-31">
+
+<label for="enddate">Until date:</label>
+<input type="date" id="enddate" name="trip-end"
+  value="2021-01-01"
+  min="2018-01-01" max="2040-12-31">
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Export</a>
+<p>Progress: <span id="exportcount"></span>/<span id="exporttotal"></span></p>
+<p>Downloads:
+  <ul id="downlist"></ul>
+</p>
+  <p>Messages</p>
+  <textarea id="exportlog" rows="25" cols="100" style="width: 40em;"></textarea>
