@@ -1,8 +1,5 @@
 from iMISutils import apiIterator, accessAttrib, updateAttrib
-from json import load
 from sys import argv, exit
-from random import shuffle, randint
-import unicodecsv
 
 if len(argv) != 3:
     print("Require OLD_TYPE and NEW_TYPE.")
