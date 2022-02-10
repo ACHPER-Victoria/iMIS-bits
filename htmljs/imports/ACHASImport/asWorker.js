@@ -122,6 +122,10 @@ function checkGenValue(table, value) {
     if (!MISSING[table].has(value)) {
       MISSING[table].add(value)
       importlog("gV Error ({0}): {1}".format(table, value));
+      if (value.includes("UNKNOWN")) {
+        importlog("Returning Unknown...");
+        return "UK";
+      }
     }
   }
   return false;
@@ -393,6 +397,11 @@ var ASDATA = {
                 "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
                 "Name": "Type",
                 "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "TotalStudents",
+                "Value": ""
             }
         ]
     }
@@ -435,7 +444,8 @@ function setOrgData(obj, values) {
   setgenericProp(obj, "SchoolNum", values["SchoolNum"]);
   setgenericProp(obj, "Type", values["Type"]);
   setgenericProp(obj, "Rating", values["Rating"]);
-  setgenericProp(obj, "Index", parseFloat(values["Index"]));
+  if(!isNaN(parseFloat(values["Index"]))) { genericProp(obj, "Index", parseFloat(values["Index"])); }
+  if(!isNaN(parseFloat(values["TotalStudents"]))) { genericProp(obj, "TotalStudents", parseFloat(values["TotalStudents"])); }
   setgenericProp(obj, "Region", values["Region"]);
   setgenericProp(obj, "LGA", values["LGA"]);
   genericProp(obj, "Area", values["Area"]);

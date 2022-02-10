@@ -76,7 +76,7 @@ function handleFiles(flist) {
 }
 FIELDS = [["iMIS ID", "imisid"], ["School no.", "SchoolNum"], ["School Type", "Type"], ["SFOE Band", "Rating"],
   ["SFOE Index", "Index"], ["Region name", "Region"], ["LGA Name", "LGA"],
-  ["Area Name", "Area"], ["SSV Region Abbreviation", "ssvregabb"]];
+  ["Area Name", "Area"], ["SSV Region Abbreviation", "ssvregabb"], ["Students Total", "TotalStudents"]];
 function handleFilesDone(headers) {
   var listelem = jQuery("#csvfields");
   FIELDS.forEach(function(i) {
