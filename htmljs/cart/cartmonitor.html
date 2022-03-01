@@ -13,7 +13,7 @@ var ACHORDTMPL = {
   "OperationName": "UpdatePricing",
 };
 // Remove this prior to pushing... pls don't forget.
-var ACHFLOWURL =
+var ACHFLOWURL = "https://prod-25.australiasoutheast.logic.azure.com:443/workflows/fbbafd390f3444de922cb0d68b4d61c3/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2kgTk3J7ChcCGQP1NGxO24lt2L8FQNSVbVTkxZ0darg";
 
 function ACHprocessInvoices(ds) {
   var finEnt = ds["entity"];
@@ -95,7 +95,8 @@ function ACHresolveChild(line, ds) {
     var item = null;
     // check each child for unit price and quantityOrdered
     line["ChildOrderLines"]["$values"].some(function(e,i) {
-      if (e["QuantityOrdered"].hasOwnProperty("Amount") && e["UnitPrice"].hasOwnProperty("Amount")) {
+      if (e.hasOwnProperty("QuantityOrdered") && ["QuantityOrdered"].hasOwnProperty("Amount") &&
+          e.hasOwnProperty("UnitPrice") && e["UnitPrice"].hasOwnProperty("Amount")) {
         // potential child
         item = ACHresolveChild(e, ds);
         return item;
