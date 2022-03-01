@@ -1,5 +1,8 @@
 <script src="/common/Uploaded%20files/Code/ASExports/ASReports.js"></script>
 
+<p> <input type="checkbox" id="incanec" name="incanec" value="incanec"> Include anecdotes <br>
+<input type="checkbox" id="inccontext" name="inccontext" value="inccontext"> Include school context <br>
+<input type="checkbox" id="inckpn" name="inckpn" value="inckpn"> Include Key Priority change notes</p>
 <label for="startdate">Include data from date:</label>
 <input type="date" id="startdate" name="trip-start"
        value="2020-01-01"
@@ -9,7 +12,7 @@
 <input type="date" id="enddate" name="trip-end"
   value="2021-01-01"
   min="2018-01-01" max="2040-12-31">
-<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Export</a>
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;">Start Export</a>
 <p>Progress: <span id="exportcount"></span>/<span id="exporttotal"></span></p>
 <p>Downloads:
   <ul id="downlist"></ul>

@@ -19,22 +19,21 @@ function updateProgress(i) {
   jQuery('span#exportcount').text(i);
 }
 
-DOWNLINKS = ["NotFound", "Found"]; //nf, found
 function endProcessing(data) {
   var downlist = document.getElementById("downlist");
-  for(var i=0;i<DOWNLINKS.length;i++) {
+  for(let [k,v] of Object.entries(data)) {
     var node = document.createElement("li");
-    if (data[i] != false) {
-      data[i] = "\ufeff"+data[i];
-      var csvData = new Blob([data[i]], {type: 'text/csv;charset=utf-8;'});
-      var exportFilename = "{0}-{1}.csv".format(DOWNLINKS[i], (new Date()).toISOString().slice(0,16))
+    if (v != false) {
+      v = "\ufeff"+v;
+      var csvData = new Blob([v], {type: 'text/csv;charset=utf-8;'});
+      var exportFilename = "{0}.csv".format(k)
       var link = document.createElement('a');
       link.href = window.URL.createObjectURL(csvData);
       link.setAttribute('download', exportFilename);
       link.innerHTML = exportFilename;
     } else {
       var link = document.createElement('span');
-      link.innerHTML = DOWNLINKS[i]+" - 0";
+      link.innerHTML = k+" - 0";
     }
     node.appendChild(link);
     downlist.appendChild(node);
@@ -42,24 +41,23 @@ function endProcessing(data) {
   }
 }
 
-function runReport() {
-  // set expected count
-  jQuery.ajax("/api/Organization",
-  {
-    type : "get",
-    contentType: "application/json",
-    async: true,
-    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
-    success: function(data) {
-      data["Properties"]["$values"].forEach(function(pi) {
-        if (pi["Name"] == "TotalRegistrants") {
-          jQuery('span#exporttotal').text(pi["Value"]["$value"]);
-        }
-      });
-    }
-  });
+function startProcessing() {
   workerMaker('startProcessing', [document.getElementById("__RequestVerificationToken").value,
-    document.getElementById("startdate").value, document.getElementById("enddate").value]);
+    document.getElementById("startdate").value, document.getElementById("enddate").value,
+    jQuery("#incanec").is(":checked"), jQuery("#inccontext").is(":checked"), jQuery("#inckpn").is(":checked")]);
+  disableUI(true, true);
+}
+
+function disableUI(disable, start=false) {
+  if (disable) {
+    document.getElementById("enddate").setAttribute("disabled", "disabled");
+    document.getElementById("startdate").setAttribute("disabled", "disabled");
+    if (start) { document.getElementById("startbutton").setAttribute("disabled", "disabled"); }
+  } else {
+    document.getElementById("enddate").removeAttribute("disabled");
+    document.getElementById("startdate").removeAttribute("disabled");
+    if (start) { document.getElementById("startbutton").removeAttribute("disabled"); }
+  }
 }
 
 const workerMaker = (type, arg) => {
@@ -80,16 +78,34 @@ myWorker.onmessage = function(e) {
     exportlog(data);
   } else if (type === 'exportprogress') {
     updateProgress(data);
+  } else if (type == 'exporttotal') {
+    jQuery('span#exporttotal').text(data);
   } else {
     console.error('An Invalid type has been passed in');
   }
 }
 
+function getCount() {
+  // set expected count
+  jQuery.ajax("/api/Party?isOrganization=true&Status=A",
+  {
+    type : "get",
+    contentType: "application/json",
+    async: true,
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      jQuery('span#exporttotal').text(data["TotalCount"]);
+    }
+  });
+}
 
-
+function np(n) {
+  return String(n).padStart(2, '0');
+}
 window.addEventListener("DOMContentLoaded", () => {
     const d = new Date();
     const ld = new Date(Date.UTC(d.getFullYear(), d.getMonth()+1, 0));
-    document.getElementById("startdate").value = "{0}-{1}-01".format(d.getFullYear(), d.getMonth()+1);
-    document.getElementById("enddate").value = ld.toISOString().split('T')[0]
+    document.getElementById("startdate").value = "{0}-{1}-01".format(d.getFullYear(), np(d.getMonth()+1));
+    document.getElementById("enddate").value = ld.toISOString().split('T')[0];
+    getCount();
 });

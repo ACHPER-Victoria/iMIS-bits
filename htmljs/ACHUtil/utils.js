@@ -20,8 +20,8 @@ function* apiIterator(url, p=[], errfunc = _i => {console.log("E: " + _i)}) {
   if (error) { return; }
   console.log("Total: " + response["TotalCount"])
   while (response["Count"] > 0){
-      nextoffset = response["NextOffset"]
-      var values = response["Items"]["$values"];
+      let nextoffset = response["NextOffset"]
+      let values = response["Items"]["$values"];
       for (var i=0; i<values.length; i++) { yield values[i]; }
       if (nextoffset == 0){ return; }
       dorequest(url, resp => {response = resp; }, errText => { error = true; errfunc(errText); }, p.concat([['offset', nextoffset]]))
@@ -161,7 +161,7 @@ function genSubEmailBody(id, email) {
 function genericProp(item, pname, pval=null, collection="Properties") {
   for (const prop of item[collection]["$values"])
   {
-    if (prop["Name"] === pname) {
+    if (prop["Name"].toUpperCase() === pname.toUpperCase()) {
       if (prop["Value"]["$type"]) {
         if (pval !== null) { prop["Value"]["$value"] = pval; }
         return prop["Value"]["$value"]
@@ -219,4 +219,42 @@ function iMISaPing() {
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('RequestVerificationToken', document.getElementById("__RequestVerificationToken").value);
   xhr.send();
+}
+
+function buildGenMaps(listofgentables) {
+  var genmap = {"desc": {}, "code":{}};
+  for (const t of listofgentables) {
+    // genmap {
+    //  desc: {table:{code:desc}},
+    //  code: {table: {desc:code}}}
+    var params = [["TableName", t]]
+    for(let i of apiIterator("/api/GenTable", params)) {
+      if (!genmap["code"].hasOwnProperty(t)) { genmap["code"][t] = {}; }
+      if (!genmap["desc"].hasOwnProperty(t)) { genmap["desc"][t] = {}; }
+      genmap["code"][t][i["Description"].toUpperCase()] = i["Code"];
+      genmap["desc"][t][i["Code"].toUpperCase()] = i["Description"];
+    }
+  }
+  return genmap;
+}
+function getGenProp(type, genmap, table, prop) {
+  if (table == null) { return prop; }
+  if (genmap[type].hasOwnProperty(table)){
+    if (genmap[type][table].hasOwnProperty(prop.toUpperCase())){
+      return genmap[type][table][prop.toUpperCase()];
+    }
+  }
+  return prop;
+}
+function getGenPropCode(genmap, table, prop) { getGenProp("code", genmap, table, prop);}
+function getGenPropDesc(genmap, table, prop) { getGenProp("desc", genmap, table, prop);}
+function* iterGenTable(tablename) {
+  for(let ent of apiIterator("/api/GEN_TABLES", [["Table_Name", tablename]])) {
+    yield [genericProp(ent, "CODE"), genericProp(ent, "DESCRIPTION")];
+  }
+}
+
+function dictget(d, key, default_value) {
+  if (d.hasOwnProperty(key)) { return d[key]; }
+  else { return default_value; }
 }
