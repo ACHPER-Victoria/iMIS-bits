@@ -396,7 +396,7 @@ def apiIterator(url, p):
     if r.status_code != 200:
         print("ERROR: "+ r.text)
         return
-    print("Total: %s" % r.json()["TotalCount"], file=stderr)
+    #print("Total: %s" % r.json()["TotalCount"], file=stderr)
     while r.json()["Count"] > 0:
         nextoffset = r.json()["NextOffset"]
         for x in r.json(object_pairs_hook=OrderedDict)["Items"]["$values"]:
@@ -526,6 +526,22 @@ def updateAttrib(item, url, iidparam="Id", idval=None):
         return False
     return True
 
+def deleteItem(url, iid):
+    if not url and not iid:
+        print("ERROR: Missing val. Got U: {0} and ID: {1}".format(url, iid))
+    r = rsession.delete("%s/api/%s/%s" % (API_URL, url, iid), headers=HEADERS)
+    if r.status_code != 200 and r.status_code != 201:
+        print(r.status_code, " - ", r.text)
+        return False
+    return True
+
+def getParty(pid):
+    r = rsession.get("%s/api/Party/%s" % (API_URL, pid), headers=HEADERS)
+    if r.status_code != 200:
+        print(r.status_code, " - ", r.text)
+        return False
+    return r.json()
+
 def getPerson(pid):
     r = rsession.get("%s/api/Person/%s" % (API_URL, pid), headers=HEADERS)
     if r.status_code != 200:
@@ -545,6 +561,12 @@ def apipost(api, postdata):
         print(r.status_code, " - ", r.text)
         return False
     return True
+def apiGetId(endpoint, eid):
+    r = rsession.get("%s/api/%s/%s" % (API_URL, endpoint, eid), headers=HEADERS)
+    if r.status_code != 200:
+        print(r.status_code, " - ", r.text)
+        return False
+    return r.json()
 
 def existsItemCategory(cat):
     if doRequest("/api/ItemClass/SALES-%s" % cat, params=None):

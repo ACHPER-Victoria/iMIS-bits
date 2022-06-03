@@ -1,4 +1,26 @@
+<span id="AS_DATA_WARN"></span>
+
+<span id="KeyPriorities_WARN"></span>
+
+<span id="Grant_Progress_WARN"></span>
+
+
+
 <script>
+function genericProp(item, pname, pval=null, collection="Properties") {
+  for (const prop of item[collection]["$values"])
+  {
+    if (prop["Name"].toUpperCase() === pname.toUpperCase()) {
+      if (prop["Value"]["$type"]) {
+        if (pval !== null) { prop["Value"]["$value"] = pval; }
+        return prop["Value"]["$value"]
+      } else {
+        if (pval !== null) { prop["Value"] = pval; }
+        return prop["Value"]
+      }
+    }
+  }
+}
 function ACHreplaceIDwithName(index, element){
   var iid = element.innerText;
   jQuery.ajax("/api/Person/"+iid,
@@ -18,8 +40,92 @@ function ACHreplaceIDwithName(index, element){
     error: function(data) { }
   });
 }
+function foundSchoolEntry(type, id, fc) {
+  let ttype = type.replace("AVIC_AS_", "");
+  var warnlist = document.getElementById(ttype+"_WARN");
+  var span = document.createElement('span');
+  var a = document.createElement('a');
+  a.appendChild(document.createTextNode("CAUTION: "+ fc +"-"+ ttype + " ALREADY ENTERED ON " + id));
+  a.href = "/party.aspx?ID="+parseInt(id);
+  span.appendChild(a);
+  span.appendChild(document.createElement('br'));
+  warnlist.appendChild(span);
+}
+function schoolEntryDataDiff(id, values) {
+  var warnlist = document.getElementById("AS_DATA_WARN");
+  var span = document.createElement('span');
+  var a = document.createElement('a');
+  a.appendChild(document.createTextNode("CAUTION: Data (" + values + ") on this page does not match with sister card " + id));
+  a.href = "/party.aspx?ID="+parseInt(id);
+  span.appendChild(a);
+  span.appendChild(document.createElement('br'));
+  warnlist.appendChild(span);
+}
+function checkSchool(type, id){
+  jQuery.ajax("/api/"+type+"?ID="+id,
+  {
+    type : "get",
+    contentType: "application/json",
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      for (let item of data["Items"]["$values"]) {
+        foundSchoolEntry(type, id, genericProp(item, "FundingCategory"));
+      }
+    },
+    error: function(data) { }
+  });
+}
+function checkSchoolB(data, datamap, id){
+  let values = [];
+  for(let [k,v] of Object.entries(datamap)) {
+    if (v != "" && v != genericProp(data, k)) { values.push(k); }
+  }
+  if (values.length != 0) {
+    schoolEntryDataDiff(id, values.join(", "));
+  }
+}
+
+function checkSchools(oid, schoolnum, datamap) {
+  if (schoolnum) {
+    jQuery.ajax("/api/AVIC_AS_Data?SchoolNum="+schoolnum,
+    {
+      type : "get",
+      contentType: "application/json",
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        for (let item of data["Items"]["$values"]) {
+          let nid = item["Identity"]["IdentityElements"]["$values"][0];
+          if (nid == oid) { continue; }
+          checkSchoolB(item, datamap, nid);
+          checkSchool("AVIC_AS_Grant_Progress", nid);
+          checkSchool("AVIC_AS_KeyPriorities", nid);
+        }
+      },
+      error: function(data) { }
+    });
+  }
+}
+function checkSisterCards() {
+  var oid = (new URLSearchParams(window.location.search)).get("ID");
+  jQuery.ajax("/api/AVIC_AS_Data/"+oid,
+  {
+    type : "get",
+    contentType: "application/json",
+    headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+    success: function(data) {
+      let dm = {};
+      for (let obj of data["Properties"]["$values"]) {
+        if (obj["Name"] == "ID") { continue; }
+        dm[obj["Name"]] = genericProp(data, obj["Name"]);
+      }
+      checkSchools(oid, genericProp(data, "SchoolNum"), dm);
+    },
+    error: function(data) { }
+  });
+}
 document.addEventListener("DOMContentLoaded", function() {
-  jQuery('table[id$=_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_SchoolFundingContacts_multipleInstanceList_Grid1_ctl00] tbody td:nth-child(2)').each(ACHreplaceIDwithName);
+  checkSisterCards();
+  jQuery('table[id$=_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_SchoolFundingContacts_multipleInstanceList_Grid1_ctl00] tbody td:nth-child(3)').each(ACHreplaceIDwithName);
   jQuery('table[id$=_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_AVICStaffcontact_multipleInstanceList_Grid1_ctl00] tbody td:nth-child(2)').each(ACHreplaceIDwithName);
   jQuery('table[id$=_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_AVICASCHAMPS_multipleInstanceList_Grid1_ctl00] tbody td:nth-child(2)').each(ACHreplaceIDwithName);
 });

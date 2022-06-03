@@ -11,7 +11,7 @@ if (!String.prototype.format) {
 }
 
 // url must not contain ?
-function* apiIterator(url, p=[], errfunc = _i => {console.log("E: " + _i)}) {
+function* apiIterator(url, p=[], errfunc = _i => {console.log("E: " + _i); throw "E: " + _i; }) {
   p = JSON.parse(JSON.stringify(p));
   p.push(["limit","100"])
   var error = false;
@@ -246,8 +246,8 @@ function getGenProp(type, genmap, table, prop) {
   }
   return prop;
 }
-function getGenPropCode(genmap, table, prop) { getGenProp("code", genmap, table, prop);}
-function getGenPropDesc(genmap, table, prop) { getGenProp("desc", genmap, table, prop);}
+function getGenPropCode(genmap, table, prop) { return getGenProp("code", genmap, table, prop);}
+function getGenPropDesc(genmap, table, prop) { return getGenProp("desc", genmap, table, prop);}
 function* iterGenTable(tablename) {
   for(let ent of apiIterator("/api/GEN_TABLES", [["Table_Name", tablename]])) {
     yield [genericProp(ent, "CODE"), genericProp(ent, "DESCRIPTION")];

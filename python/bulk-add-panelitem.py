@@ -15,8 +15,10 @@ with open(CSVFILE, newline='', encoding='utf-8-sig') as csvfile:
     dreader = csv.DictReader(csvfile)
     for row in dreader:
         # find items...
-        print(row)
+        #print(row)
+        count = 0
         for item in apiIterator("/api/{0}".format(PANEL), [[SEARCH, row[SEARCH]]]):
+            count += 1
             for param in ATTRLIST:
                 if param not in row:
                     print("ERROR: param {0} not in row {1}".format(param, row))
@@ -26,4 +28,6 @@ with open(CSVFILE, newline='', encoding='utf-8-sig') as csvfile:
                     print("ERROR: Could not find param {0} in item {1}".format(param, item))
                     exit(1)
             updateAttrib(item, PANEL, idval=item["Identity"]["IdentityElements"]["$values"][0])
+        if count < 1:
+            print("WARNING: Could not find row... {0}".format(row[SEARCH]))
         print(".", end="")

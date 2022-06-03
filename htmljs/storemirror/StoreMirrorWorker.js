@@ -261,6 +261,7 @@ function doMemberItem(item, percentdisc, freeitems) {
 
   if (setItem) {
     // nuke Product_Kits:
+    return true;
     processSetItem(item);
     if (!exists) {
       // pre-make new item with empty components making a copy of item
