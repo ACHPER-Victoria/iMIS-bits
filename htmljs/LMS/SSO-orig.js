@@ -1,5 +1,7 @@
 <script type='text/javascript'>
 
+jQuery(document).ready(function(){
+
     if (!String.prototype.includes) {
         String.prototype.includes = function (search, start) {
             'use strict'
@@ -136,18 +138,14 @@ function processBridgeSettings(data, status, req, xml, xmlHttpRequest, responseX
 
     /* Firefox and Chrome (and possibly early versions of IE) */
     var bridgeSettings = data.documentElement.children;
-
     if (typeof(bridgeSettings) === "undefined") {
         /* At least IE 11 doesn't see innerHTML, but does have textContent */
         bridgeSettings = data.documentElement.childNodes;
-
     }
 
 
     for (var i = 0; i < bridgeSettings.length; i++) {
-
         var settingName = bridgeSettings[i].nodeName.toUpperCase();
-
         var settingValue;
 
         if (typeof(req.responseXML.children) !== "undefined") {
@@ -167,8 +165,6 @@ function processBridgeSettings(data, status, req, xml, xmlHttpRequest, responseX
 
         if (settingName === 'SSOGATEWAYURLPARAM') {
             ssoGatewayUrlParam = settingValue;
-        } else if (settingName === 'BRIDGESERVICEURL') {
-            ATSWebServiceUrl = settingValue;
         } else if (settingName === 'SSOFILTER') {
             ssoFilter = settingValue;
         } else if (settingName === 'SSOCOURSEIDPARAM') {
@@ -365,10 +361,10 @@ function processEncryptUserID(data, status, req, xml, xmlHttpRequest, responseXM
         console.log('gEncryptedUserId =' + gEncryptedUserId + '.');
     }
 
-    createCookie();
+    ATScreateCookie();
 }
 
-function createCookie() {
+function ATScreateCookie() {
     //Create the cookie
     var myDate = new Date();
     myDate.setMonth(myDate.getMonth() + 12);
@@ -390,7 +386,7 @@ function processUserRedirect() {
     {
         //This is an error
         if (debugMode) {
-            console.log('No Course ID was specifiedx');
+            console.log('No Course ID was specified');
         }
     }
 
@@ -473,5 +469,7 @@ function extractHostname(url) {
 
     return hostname;
 }
+
+});
 
 </script>
