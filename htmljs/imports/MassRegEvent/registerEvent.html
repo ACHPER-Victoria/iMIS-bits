@@ -1,0 +1,38 @@
+<script src="/common/Uploaded%20files/Code/MassRegEvent/registerEvent.js"></script>
+<style>.addtopalign { vertical-align: top; }</style>
+
+<h1>Register for event</h1>
+<h3>Careful: This tool probably can't do anything destructive, but who knows...</h3>
+<a class="TextButton" id="resetbutton" href="javascript:window.location.href=window.location.href">Reset</a>
+
+<label for="memdate">Give VIC Full Membership Until:</label>
+<input type="date" id="memdate"
+       value="2020-01-01"
+       min="2018-01-01" max="2040-12-31">
+
+<p>Event (will only show Pending events): <br>
+  <select id="EventPullDown" size="8">
+    <option value="">(None)</option>
+  </select>
+</p>
+
+<label for="clist">CSV file of Registration Data:</label>
+<input type="file"
+       id="clist" onchange="handleFiles(this.files)"
+       accept=".csv">
+<p>CSV Columns:
+ <ul id="csvfields"></ul>
+</p>
+<h3>Registration Options</h3>
+<!-- do like the above for the registration options... -->
+<ul id="regopts"></ul>
+<!-- do like the event thing above for the membership options... -->
+<label for="memopts">Which values should give membership:</label>
+<select id="memopts" size="8" multiple>
+  <option value="">(None)</option>
+</select>
+
+<a class="TextButton" id="startbutton" href="#" onclick="startProcessing();return false;" disabled="disabled">Start Processing</a>
+<p>Progress: <span id="mergecount"></span>/<span id="mergetotal"></span></p>
+<p>Messages</p>
+<textarea id="mergelog" rows="25" cols="100" style="width: 40em;"></textarea>
