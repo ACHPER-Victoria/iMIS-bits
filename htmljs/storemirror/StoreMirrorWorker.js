@@ -243,7 +243,7 @@ function updatePrices(itemID, percentdisc, freeitems) {
 function doMemberItem(item, percentdisc, freeitems) {
   // POST/PUT update
   var origcode = item["ItemCode"];
-  //if (!origcode.includes("2021")) { return true; }
+  if (!origcode.includes("23")) { return true; }
   var method = "POST";
   var url = "/api/Item";
   var setItem = false;
@@ -261,7 +261,7 @@ function doMemberItem(item, percentdisc, freeitems) {
 
   if (setItem) {
     // nuke Product_Kits:
-    return true;
+    //return true;
     processSetItem(item);
     if (!exists) {
       // pre-make new item with empty components making a copy of item
