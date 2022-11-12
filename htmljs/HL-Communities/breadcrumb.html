@@ -1,9 +1,13 @@
 <script>
+// This lives at "Footer Bottom Content". It could probably be elsewhere like only in the "community" section... but oh well.
 window.addEventListener("DOMContentLoaded", () => {
-  let u = new URL(document.getElementById("BreadCrumb").children[0].children[0].children[0].href);
-  let sp = new URLSearchParams(u.search);
-  sp.delete("CommunityKey");sp.delete("communitykey"); // sigh...
-  u.search = sp;
-  document.getElementById("BreadCrumb").children[0].children[0].children[0].href = u.href;
+  let ele = document.getElementById("BreadCrumb")?.children[0]?.children[0]?.children[0]?.href;
+  if (ele) {
+    let u = new URL();
+    let sp = new URLSearchParams(u.search);
+    sp.delete("CommunityKey");sp.delete("communitykey"); // sigh...
+    u.search = sp;
+    document.getElementById("BreadCrumb").children[0].children[0].children[0].href = u.href;
+  }
 });
 </script>
