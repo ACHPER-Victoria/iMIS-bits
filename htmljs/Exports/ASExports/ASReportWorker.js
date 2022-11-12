@@ -133,7 +133,8 @@ function cacheData(orgset, endpoint, dict, fc=null, date=null, dfrom=null, dto=n
   if (date == null) { iter = apiIterator("/api/{0}/".format(endpoint)); }
   else if (endpoint == "ContactInteraction") {
     iter = apiIterator("/api/{0}/".format(endpoint), [[date, "between:{0}|{1}".format(dfrom,dto)],
-    ["InteractionActionCode", "ne:COMMUNITYMEMBERJOIN"], ["InteractionTypeCode", "HL"]]);
+    ["InteractionActionCode", "ne:COMMUNITYMEMBERJOIN"], ["InteractionActionCode", "ne:COMMUNITYMEMBERLEAVE"],
+    ["InteractionActionCode", "ne:COMMUNITYDISCUSSIONSVIEW"], ["InteractionTypeCode", "HL"]]);
   } else { iter = apiIterator("/api/{0}/".format(endpoint), [[date, "between:{0}|{1}".format(dfrom,dto)]]); }
   if (endpoint == "ContactInteraction") {
     for (let item of iter) {
@@ -255,6 +256,8 @@ var FUNDING_CATEGORY = {
   "CONTACT_SUPPORT_PA": "",
   "CONTACT_SUPPORT_PD": "",
   "CONTACT_SUPPORT_AP": "",
+  "CONTACT_SUPPORT_SS": "",
+  "CONTACT_SUPPORT_CI": "",
   "CONTACT_SUPPORT_OTH": "",
   "CONTACT_PD": "",
   "CONTACT_PDR": "",
@@ -276,24 +279,29 @@ var FUNDING_CATEGORY = {
   "GRANT_MidYearProgressReport": "",
   "GRANT_AcquittalComplete": "",
   "GRANT_Case_Study":"",
-  "GRANT_EXP_BIKEED": "",
-  "GRANT_EXP_BIKEST": "",
-  "GRANT_EXP_CAMPEX": "",
-  "GRANT_EXP_CF": "",
-  "GRANT_EXP_CFURN": "",
-  "GRANT_EXP_ECP": "",
+  "GRANT_EXP_BKEDEQ": "",
+  "GRANT_EXP_BKINF": "",
+  "GRANT_EXP_BKPATH": "",
+  "GRANT_EXP_CAMP": "",
+  "GRANT_EXP_CLASS": "",
+  "GRANT_EXP_CRT": "",
+  "GRANT_EXP_CURRIC": "",
   "GRANT_EXP_EFEES": "",
-  "GRANT_EXP_ESTAFF": "",
+  "GRANT_EXP_EXT": "",
   "GRANT_EXP_FITEQ": "",
-  "GRANT_EXP_IMPDEV": "",
-  "GRANT_EXP_LASACT": "",
-  "GRANT_EXP_LIMA": "",
-  "GRANT_EXP_TRA": "",
-  "GRANT_EXP_PEPD": "",
+  "GRANT_EXP_LINE": "",
+  "GRANT_EXP_LUNEQ": "",
+  "GRANT_EXP_LUNACT": "",
   "GRANT_EXP_PLAYEQ": "",
-  "GRANT_EXP_SENSE": "",
-  "GRANT_EXP_SPORTEQ": "",
-  "GRANT_EXP_OTHER": "",
+  "GRANT_EXP_PMPEQ": "",
+  "GRANT_EXP_PROMO": "",
+  "GRANT_EXP_SENSEQ": "",
+  "GRANT_EXP_SPEQ": "",
+  "GRANT_EXP_SPGOAL": "",
+  "GRANT_EXP_SPUNI": "",
+  "GRANT_EXP_STAFFPD": "",
+  "GRANT_EXP_TSTOREQ": "",
+  "GRANT_EXP_TRANS": "",
   "Anecdotes": "",
   "SupportingIn22" : "",
   "Rating/Band": "",
@@ -342,7 +350,6 @@ function newFC(fc, schobj) {
   return obj;
 }
 function populateFC(fc, obj, id) {
-
   // populate with all generic items. Update with date range stuff later
   for (let itype of ["ACHPER Staff Contact", "School Key Contact*", "School Champion*"]) {
     ttype = itype[itype.length-1];
@@ -406,7 +413,7 @@ function populateFC(fc, obj, id) {
   if (count > 1) { exportlog("ERROR: Multiple entries for GrantProgress for Contact ID {0} in funding category {1}".format(id, fc)); }
   return obj;
 }
-var PD_NOTES = ["PD", "PDR", "PDW"];
+var PD_NOTES = ["PD", "PDR", "PDW", "PDM"];
 // "CONTACT_PD_Attendees": "",
 // "CONTACT_PDR_Attendees": "",
 // "CONTACT_PDW_Attendees": "",
@@ -417,7 +424,7 @@ function processNotesWithDate(fc, obj, id) {
   if (iter.length > 0 && obj["CONTACT_Email"] === "") { bulkSetValue(obj, "CONTACT_", 0); }
   for (let note of iter) {
     let key = "";
-    if (PD_NOTES.includes(note["Note_Type"])) {
+    if (PD_NOTES.includes(note["Note_Type"])) { // check for attendee numbers
       key = "CONTACT_"+note["Note_Type"];
       if (!obj.hasOwnProperty(key+"_Attendees")) { obj[key+"_Attendees"] = 0; }
       obj[key+"_Attendees"] += note["PD_Attendees"];
@@ -434,6 +441,7 @@ function processNotesWithDate(fc, obj, id) {
 }
 var COM_TABLE = {
   "MESSAGETHREADCREATE" : "COM_Discussion Post",
+  "DISCUSSIONMESSAGEREPLY" : "COM_Discussion Post",
   "MESSAGETHREADVIEW" : "COM_Discussion View",
   "LIBRARYENTRYVIEW" : "COM_Resource View",
   "LIBRARYENTRYCREATE": "COM_Resource Posted"
@@ -444,6 +452,16 @@ function processCommunityData(schobj, id) {
   for (let con of iter) {
     // check if one of COM_TABLE:
     if (COM_TABLE.hasOwnProperty(con["InteractionActionCode"])) {
+      if (con["InteractionActionCode"] == "LIBRARYENTRYCREATE" &&
+            !con["Description"].endsWith('"')) {
+        // ommit items unless has trailing " to signify root library.
+        continue;
+      }
+      if (con["InteractionActionCode"] == "LIBRARYENTRYVIEW" &&
+            con["Description"].includes('"RE: ')) {
+        // ommit items that have "RE:  in them, suggesting attachment in a thread.
+        continue;
+      }
       schobj[COM_TABLE[con["InteractionActionCode"]]].increment();
     }
   }
@@ -506,14 +524,15 @@ function startProcessing(start, end, incanec, inccontext, inckpn) {
     postMessage({type: "exportprogress", data: count,});
     // Build School Obj and put in mapping
     var schobj = populateSchoolObj(dorequest("/api/Party/{0}".format(id))[1], inccontext, inckpn);
+    // as soon as school object is got, process communication data that's bound to the school for current contact ID
+    processCommunityData(schobj, id);
     // iterate over funding categories
     for (let fc of Object.values(GEN_MAP["code"]["AVIC_AS_CATEGORY"])){
       // check if school has any data for this category worth making...
       if (!checkFC(id, fc)) { continue; }
-      let schfc = getCreateFC(fc, schobj, id);
+      let schfc = getCreateFC(fc, schobj);
       populateFC(fc, schfc, id);
       processNotesWithDate(fc, schfc, id);
-      processCommunityData(schobj, id);
       if (incanec) { processAnecdotesWithDate(fc, schfc, id); }
     }
   }
@@ -529,6 +548,11 @@ function startProcessing(start, end, incanec, inccontext, inckpn) {
 
   // process "Funded2122" attribute.
   for (let sch of Object.values(SCHOOLS)) {
+    // check for schobj's with no FC's. Create empty FC for NF schools with com data
+    if (Object.keys(sch["FC"]) == 0) {
+      getCreateFC("NF", sch);
+    }
+
     for (let [fy2,fy1] of Object.entries(FCYR)) {
       if (sch["FC"].hasOwnProperty(fy2) && (sch["FC"][fy2]["School Key Contact"].length > 0) &&
           sch["FC"].hasOwnProperty(fy1) && (sch["FC"][fy1]["School Key Contact"].length > 0)) {
@@ -563,7 +587,6 @@ function startProcessing(start, end, incanec, inccontext, inckpn) {
     }
   }
   // process contacts to merge list in to string, also flatten NumberRef obj
-  // TODO: if a school has COM_ entries but no FC, add a dummy "NF" FC so those values show up in the report.
   for (let fc of Object.values(FUNDING_CATEGORIES)) {
     for (let fcobj of Object.values(fc)) {
       for (let k of ["IDs", "School Names", "ACHPER Staff Contact", "School Key Contact", "School Key Contact Role",
