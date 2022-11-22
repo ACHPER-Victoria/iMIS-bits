@@ -181,7 +181,7 @@ function startProcessing(f, fields, actualevent, regopts, memopts, memdate) {
           funccode = regopts[r["data"][0][field].trim()];
         }
         if (!CheckAndRegister(actualevent, id, funccode)) {
-          mergelog("Stopping due to error.");
+          mergelog("Stopping due to error, for ID: "+id);
           p.abort();
           return;
         }
