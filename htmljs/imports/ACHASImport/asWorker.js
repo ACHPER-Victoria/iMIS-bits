@@ -100,7 +100,7 @@ const GENMAP = {"Region": "REGION", "Rating" : "AVIC_AS_RATING", "LGA" : "AVIC_L
   "Area" : "SUBREGION", "SSV_REGION" : "AVIC_AS_SSVREG", "Type" : "SCHOOLTYPE"};
 const GENCODES = {}; // ["TABLE"][importdata] = code
 const MISSING = {};
-function buildGenMaps() {
+function buildCustomGenMaps() {
   for (const v of Object.values(GENMAP)) {
     // /GenTable/?TableName=AVIC_AS_RATING
     var params = [["TableName", v]]
@@ -242,7 +242,7 @@ function startProcessing(f, fields, fundingcat, removeold, dry) { // CSVFILE, fi
   var found = [];
   var row = 0;
   // build GENMAP VALUES
-  buildGenMaps();
+  buildCustomGenMaps();
   Papa.parse(f, {
     "header": true,
     "step": function(r,p) {
@@ -362,6 +362,24 @@ var ASDATA = {
             },
             {
                 "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "OriginalAppEmail",
+                "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "OriginalAppFName",
+                "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "ACH_Staff",
+                "Value": {
+                    "$type": "System.Int32",
+                    "$value": 0
+                }
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
                 "Name": "Area",
                 "Value": ""
             },
@@ -434,6 +452,7 @@ ASCONTACT = {
     }
 }
 
+// ["Staff iMIS ID", "simisid"]
 function buildOrgData(id, values) {
   var obj = JSON.parse(JSON.stringify(ASDATA));
   genericProp(obj, "ID", id);
@@ -442,14 +461,21 @@ function buildOrgData(id, values) {
 }
 function setOrgData(obj, values) {
   setgenericProp(obj, "SchoolNum", values["SchoolNum"]);
-  setgenericProp(obj, "Type", values["Type"]);
-  setgenericProp(obj, "Rating", values["Rating"]);
-  if(!isNaN(parseFloat(values["Index"]))) { genericProp(obj, "Index", parseFloat(values["Index"])); }
-  if(!isNaN(parseFloat(values["TotalStudents"]))) { genericProp(obj, "TotalStudents", parseFloat(values["TotalStudents"])); }
-  setgenericProp(obj, "Region", values["Region"]);
-  setgenericProp(obj, "LGA", values["LGA"]);
-  genericProp(obj, "Area", values["Area"]);
-  genericProp(obj, "SSV_REGION", values["ssvregabb"]);
+  if (values.hasOwnProperty("OriginalAppEmail")) { genericProp(obj, "OriginalAppEmail", values["OriginalAppEmail"]); }
+  if (values.hasOwnProperty("OriginalAppFName")) { genericProp(obj, "OriginalAppFName", values["OriginalAppFName"]); }
+  if (values.hasOwnProperty("ACH_Staff") && !isNaN(parseInt(values["ACH_Staff"])) ) { genericProp(obj, "ACH_Staff", parseInt(values["ACH_Staff"])); }
+  if (values.hasOwnProperty("Type")) { setgenericProp(obj, "Type", values["Type"]); }
+  if (values.hasOwnProperty("Rating")) { setgenericProp(obj, "Rating", values["Rating"]); }
+  if (values.hasOwnProperty("Index")) {
+    if(!isNaN(parseFloat(values["Index"]))) { genericProp(obj, "Index", parseFloat(values["Index"])); }
+  }
+  if (values.hasOwnProperty("TotalStudents")) {
+    if(!isNaN(parseFloat(values["TotalStudents"]))) { genericProp(obj, "TotalStudents", parseFloat(values["TotalStudents"])); }
+  }
+  if (values.hasOwnProperty("Region")) { setgenericProp(obj, "Region", values["Region"]); }
+  if (values.hasOwnProperty("LGA")) { setgenericProp(obj, "LGA", values["LGA"]); }
+  if (values.hasOwnProperty("Area")) { genericProp(obj, "Area", values["Area"]); }
+  if (values.hasOwnProperty("ssvregabb")) { genericProp(obj, "SSV_REGION", values["ssvregabb"]); }
 }
 function buildContactData(id, ent_type, contactid, id_prop, fundingcat) {
   var obj = JSON.parse(JSON.stringify(ASCONTACT));

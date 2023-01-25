@@ -74,7 +74,9 @@ function handleFiles(flist) {
   CSVFILE = flist[0]
   workerMaker('getHeaders', [document.getElementById("__RequestVerificationToken").value, CSVFILE]);
 }
-FIELDS = [["iMIS ID", "imisid"], ["School no.", "SchoolNum"], ["School Type", "Type"], ["SFOE Band", "Rating"],
+FIELDS = [["Contact iMIS ID", "imisid"], ["Staff iMIS ID", "ACH_Staff"], ["Applicant Email", "OriginalAppEmail"],
+  ["Applicant First Name", "OriginalAppFName"],
+  ["School no.", "SchoolNum"],["School Type", "Type"], ["SFOE Band", "Rating"],
   ["SFOE Index", "Index"], ["Region name", "Region"], ["LGA Name", "LGA"],
   ["Area Name", "Area"], ["SSV Region Abbreviation", "ssvregabb"], ["Students Total", "TotalStudents"]];
 function handleFilesDone(headers) {
