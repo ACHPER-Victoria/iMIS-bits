@@ -16,7 +16,8 @@ class Document:
         self.doc = doc
 
 api = openAPI(json.load(open(join(home, ".iMIS.json"), "rb")))
-DOCS = {} # @path : [list of docs(versions)]
+
+PATH_PREFIX = "@/public/news/news-items"
 
 PUBDATE_RE = br"(<PublicationDate>)([\s\S]*?)(<\/PublicationDate>)"
 ITEMDATE_RE = br"""(<a:Value i:type="b:dateTime" xmlns:b="http://www.w3.org/2001/XMLSchema">)([\s\S]*?)(</a:Value>)"""
@@ -31,7 +32,7 @@ COUNT = 0
 for item in api.apiIterator("/api/DocumentSummary/", (("DocumentTypeId", "CON"),)):
     # look for news prefix in path
     path = item["Path"]
-    if path.startswith("@/public/-TEMP/testnews/"):
+    if path.startswith(PATH_PREFIX):
         #ignore non-published items.
         if item["Status"] != "Published": continue
         # look if publish date...
