@@ -64,7 +64,9 @@ function getOrgsFromNo(schoolno) {
   var ids = [];
   for(let i of apiIterator("/api/AO_OrganisationsData", params)) {
     // check id to make sure org type... nevermind, there was only 2 and they were weirds.
-    ids.push(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0])
+    if(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] != "") {
+      ids.push(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0])
+    }
   }
   return ids;
 }
