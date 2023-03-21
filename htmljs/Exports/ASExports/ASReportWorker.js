@@ -163,11 +163,13 @@ function cacheData(orgset, endpoint, dict, fc=null, date=null, dfrom=null, dto=n
       }
       if (fc == null ) { dict[entry["ID"]] = entry; }
       else {
-        let ifc = entry[fc];
-        if (ifc == "") { exportlog("ERROR: Missing Funding Category for {0} type in contact {1}".format(endpoint, entry["ID"])); }
-        let key = "{0}-{1}".format(entry[fc], entry["ID"]);
-        if (!dict.hasOwnProperty(key)) { dict[key] = []; }
-        dict[key].push(entry);
+        let entryfc = entry[fc];
+        if (entryfc == "") { exportlog("ERROR: Missing Funding Category for {0} type in contact {1}".format(endpoint, entry["ID"])); }
+        for (let xfc of entryfc.split(",")) {
+          let key = "{0}-{1}".format(xfc, entry["ID"]);
+          if (!dict.hasOwnProperty(key)) { dict[key] = []; }
+          dict[key].push(entry);
+        }
       }
       orgset.add(entry["ID"]);
     }
