@@ -1,41 +1,30 @@
-from iMISutils import addToAlliance, allianceList, resolveAOUser
+from iMISpy import openAPI
 from sys import argv, exit
-import unicodecsv
+import csv
+import json
+from os.path import expanduser, join
+home = expanduser("~")
 
 if len(argv) != 3:
-    print "Require CSVfile and Alliance name"
+    print("Require CSVfile and Alliance name")
     exit(1)
 
-ALLIANCE_USERS = allianceList(argv[2])
-print ALLIANCE_USERS
-
 ALLIANCE = argv[2]
-MISSING = {}
+IDCOL = "External ID"
 
-f = open(argv[1], "rb")
-fo = open("missing-all2.csv", "wb")
-fe = open("errors.txt", "wb")
-reader = unicodecsv.reader(f, encoding="utf-8")
-header = True
-for row in reader:
-    if header:
-        header = False
-        continue
-    imisid = row[0].strip()
-    id = imisid
-    # get iMIS ID
-    #print id,
-    #imisid = resolveAOUser(id)
-    if imisid is None:
-        if id not in MISSING:
-            MISSING[id] = row
-        continue
+api = openAPI(json.load(open(join(home, ".iMIS.json"), "rb")))
 
-    if imisid not in ALLIANCE_USERS:
-        print "Adding (%s,%s)..." % (id, imisid)
-        if not addToAlliance(imisid, ALLIANCE):
-            fe.write("%s,%s,%s\n" % (id, imisid, ALLIANCE))
+ALLIANCE_USERS = [x["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] for x in api.allianceList(ALLIANCE)]
+print(ALLIANCE_USERS)
 
-writer = unicodecsv.writer(fo, encoding="utf-8")
-for i in sorted(MISSING):
-    writer.writerow(MISSING[i])
+skipped = []
+with open(argv[1], newline='', encoding='utf-8-sig') as csvfile:
+    dreader = csv.DictReader(csvfile)
+    for row in dreader:
+        imisid = row[IDCOL].strip()
+        if not imisid:
+            skipped.append(row)
+            continue
+        if imisid not in ALLIANCE_USERS:
+            print("Adding (%s)..." % (imisid,))
+            api.addToAlliance(imisid, ALLIANCE)

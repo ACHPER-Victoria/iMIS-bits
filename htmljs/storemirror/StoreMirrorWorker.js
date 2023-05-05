@@ -83,31 +83,7 @@ function itemMExists(code) {
   return result[0];
 }
 
-function genericProp(item, pname, pval=null) {
-  for (const prop of item["Properties"]["$values"])
-  {
-    if (prop["Name"] === pname) {
-      if (prop["Value"]["$type"]) {
-        if (pval !== null) { prop["Value"]["$value"] = pval; }
-        return prop["Value"]["$value"]
-      } else {
-        if (pval !== null) { prop["Value"] = pval; }
-        return prop["Value"]
-      }
-    }
-  }
-}
-function deleteGenericProp(pitem, pname) {
-  var newprops = [];
-  for (const prop of pitem["Properties"]["$values"]) {
-    if (prop["Name"] != pname) {
-      newprops.push(prop);
-    }
-  }
-  pitem["Properties"]["$values"] = newprops;
-}
-
-function processSetItem(item) {
+function manipulateKitItem(item) {
   // list member item items:
   var result = dorequest("/api/Product_Kit?PRODUCT_CODE={0}M".format(item["ItemCode"]))
   if (result[0]) {
@@ -240,14 +216,15 @@ function updatePrices(itemID, percentdisc, freeitems) {
   return true;
 }
 
-function doMemberItem(item, percentdisc, freeitems) {
+function doMemberItem(item, percentdisc, freeitems, doingset) {
   // POST/PUT update
   var origcode = item["ItemCode"];
-  if (!origcode.includes("23")) { return true; }
+  // if (!origcode.includes("23")) { return true; }  // debug?
   var method = "POST";
   var url = "/api/Item";
   var setItem = false;
   if (item["$type"].includes("Asi.Soa.Commerce.DataContracts.ItemSetItemData")) {
+    if (!doingset) { synclog("Skipping set ({0})".format(origcode)); return true; }
     setItem = true;
     url = "{0}SetItem".format(url);
   }
@@ -262,15 +239,16 @@ function doMemberItem(item, percentdisc, freeitems) {
   if (setItem) {
     // nuke Product_Kits:
     //return true;
-    processSetItem(item);
-    if (!exists) {
-      // pre-make new item with empty components making a copy of item
-      var sitem = processItem(JSON.parse(JSON.stringify(item)), true, true);
-      var sresult = dorequest(url, null, null, [], sitem, "POST")
-      if (!sresult[0]) { synclog("dMI-1 Error ({0})".format(sresult[1])); return false; }
-      method = "PUT"
-      url = "/api/ItemSetItem/{0}M".format(origcode)
-    }
+    //manipulateKitItem(item);
+
+    // if (!exists) {
+    //   // pre-make new item with empty components making a copy of item
+    //   var sitem = processItem(JSON.parse(JSON.stringify(item)), true, true);
+    //   var sresult = dorequest(url, null, null, [], sitem, "POST")
+    //   if (!sresult[0]) { synclog("dMI-1 Error ({0})".format(sresult[1])); return false; }
+    //   method = "PUT"
+    //   url = "/api/ItemSetItem/{0}M".format(origcode)
+    // }
   }
   item = processItem(item, setItem); // reassignment not really needed
   // submit
@@ -290,22 +268,26 @@ function setupSync(categories, percentdisc, freeitems) {
   if (totalcount === false) { return; }
   postMessage({ type: "totalcount", data: totalcount });
   var running = true;
-  for (const cat of categories.split(",")) {
-    // for category iterate over it's items...
-    if (!checkMemberCat(cat)) {
-      // skip categories that don't have Member category
-      continue;
+  for (const doingset of [false,true]) {
+    for (const cat of categories.split(",")) {
+      // for category iterate over it's items...
+      if (!checkMemberCat(cat)) {
+        // skip categories that don't have Member category
+        continue;
+      }
+      //var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+      var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
+      // do non sets first, then do sets...
+      for (const item of apiIterator("/api/Item", params,
+          _i => {console.log("E: " + _i); running = false; }
+          )) {
+        // process store item
+        // skip sets... on first round
+        if (!doMemberItem(item, percentdisc, freeitems, doingset)) { running = false; break; }
+        incrementProcessed();
+      }
+      if (!running) { break; }
     }
-    //var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
-    var params = [["ItemClassId", CLASSID.format(cat)], ["ItemStatus", "A"]];
-    for (const item of apiIterator("/api/Item", params,
-        _i => {console.log("E: " + _i); running = false; }
-        )) {
-      // process store item
-      if (!doMemberItem(item, percentdisc, freeitems)) { running = false; break; }
-      incrementProcessed();
-    }
-    if (!running) { break; }
   }
   doneAndReturn();
 }
