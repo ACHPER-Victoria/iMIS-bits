@@ -1,0 +1,55 @@
+<script src="/common/Uploaded%20files/Code/ASExports/BulkContactHistory.js"></script>
+
+<p>To select multiple items in a list hold the CTRL key and click the options you want.
+  To un-select options hold CTRL and click that option.<br>
+<strong>There is no undo for this tool</strong>. Please use caution when using this tool. To reverse a mistake you will need to
+  go in to each contact and edit/delete/change the record in question.<br>
+Please be cautious when using the PD Attendees option. It only makes sense to use this tool for attendees
+  when all schools in the list have the same number of attendees.<br>
+  <a target="_blank" href="https://achpervic.sharepoint.com/:v:/s/it/EWWNJ5ldxUFOlakNao20as8BCNwT2XIi8B3kqVumKvwQXA?e=wUQQeP">Help video on how to use the list filter option</a>
+</p>
+
+<label for="myschools">My Schools:</label>
+<select id="myschools" multiple>
+</select>
+<label id="listnameid" for="listname" style="display:none;">List Filter:</label>
+<select id="listname" multiple style="display:none;">
+</select>
+Click <a href="/Staff/Party.aspx?cdbe9d88=14#cdbe9d88">here</a> to edit My Schools list.<br>
+
+<label for="extraschools">Extra schools (comma separated list)
+  <abbr title="You might use this to enter a list of school IDs that you may not normally deal with but need to bulk data entry. You may want to save multiple list of school IDs if you often work with different groups of schools and need to bulk add contact history notes.">
+[when would I use this?]</abbr>:
+</label>
+<input type="text" id="extraschools"><br>
+
+<label for="startdate">Date of contact:</label>
+<input type="date" id="startdate" value="2020-01-01" min="2018-01-01" max="2040-12-31"><br>
+
+<label for="contacttype">Type of contact:</label>
+<select id="contacttype">
+</select><br>
+
+<label for="pdattendees">PD Attendees:</label>
+<input type="number" id="pdattendees" ><br>
+
+<label for="fc">Funding category:</label>
+<select id="fc" multiple required>
+</select><br>
+
+<label for="staff">Staff member:</label>
+<select id="staff" required>
+</select><br>
+
+<label for="supporttypes">Types of support offered:</label>
+<select id="supporttypes" multiple>
+</select><br>
+
+<label for="summary">Summary of contact:</label>
+<textarea id="summary" rows="6" cols="50"></textarea><br>
+
+
+<a class="TextButton" id="startbutton" href="#" onclick="start();return false;">Add Contact History</a>
+<p>Progress: <span id="exportcount"></span>/<span id="exporttotal"></span></p>
+<p>Messages</p>
+<textarea id="exportlog" rows="25" cols="100" style="width: 40em;"></textarea>

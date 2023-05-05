@@ -1,0 +1,43 @@
+<style>
+</style>
+<script type="text/javascript">
+const SELECTOR = 'table[id$=_TemplateBody_WebPartManager1_gwpciAccountpagetabs_ciAccountpagetabs_NewPanelEditorCommon_multipleInstanceList_Grid1_ctl00] tbody tr'
+const ACH_TARGETNODE = document.getElementById('ctl01_TemplateBody_WebPartManager1_gwpciAccountpagetabs_ciAccountpagetabs_NewPanelEditorCommon_ctl00');
+const ACH_OBSCONFIG = { attributes: false, childList: true, subtree: true };
+var ACH_MUTOBS = null;
+
+function ACHOBSCallBack(mutationsList, observer) {
+  for(const mutation of mutationsList) { if (mutation.type === 'childList') { console.log("Running observer."); ACHaddNames(observer); } }
+}
+
+function ACHaddNames(observer) {
+  if (observer) { observer.disconnect(); console.log('Disconnecting...');}
+  Promise.all(Array.from(document.querySelectorAll(SELECTOR), (elem, index) => {
+    return jQuery.ajax("/api/Party/"+elem.children[0].innerText,
+    {
+      type : "get",
+      contentType: "application/json",
+      headers: { "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value },
+      success: function(data) {
+        var a = document.createElement('a');
+        if (data["Status"]["PartyStatusId"] =="A") { a.appendChild(document.createTextNode("" + data["Name"])); }
+        else { a.appendChild(document.createTextNode("NOT ACTIVE ORG")); }
+        a.href = "/party.aspx?ID="+parseInt(elem.children[0].innerText);
+        console.log("Modifying... "+elem.children[0].innerText)
+        elem.children[2].replaceChildren(a);
+      }
+    });
+  })).then(() => {
+    if (observer) { console.log("Reobserving..."); observer.observe(ACH_TARGETNODE, ACH_OBSCONFIG); }
+    else if (!ACH_MUTOBS){
+      // setup observer
+      console.log("observing...");
+      ACH_MUTOBS = new MutationObserver(ACHOBSCallBack); ACH_MUTOBS.observe(ACH_TARGETNODE, ACH_OBSCONFIG);
+    } else { console.log("wat hapen?"); }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+  ACHaddNames();
+});
+</script>
