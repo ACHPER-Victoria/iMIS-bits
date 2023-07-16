@@ -128,10 +128,10 @@ function processItem(item, setItem=false, blankout=false) {
   }
   if (setItem) {
     for(const si of item["Components"]["$values"]){
-        delete si["Item"]["ItemClass"];
+        si["Item"]["$type"] = "Asi.Soa.Commerce.DataContracts.LegacyProductItemData, Asi.Contracts";
         si["Item"]["ItemCode"] = "{0}M".format(si["Item"]["ItemCode"]);
         si["Item"]["ItemId"] = "{0}M".format(si["Item"]["ItemId"]);
-        delete si["Item"]["Name"]
+        si["Item"]["Name"] = "{0}M".format(si["Item"]["Name"]);
     }
   }
   return item;
@@ -237,18 +237,10 @@ function doMemberItem(item, percentdisc, freeitems, doingset) {
   }
 
   if (setItem) {
-    // nuke Product_Kits:
-    //return true;
-    //manipulateKitItem(item);
-
-    // if (!exists) {
-    //   // pre-make new item with empty components making a copy of item
-    //   var sitem = processItem(JSON.parse(JSON.stringify(item)), true, true);
-    //   var sresult = dorequest(url, null, null, [], sitem, "POST")
-    //   if (!sresult[0]) { synclog("dMI-1 Error ({0})".format(sresult[1])); return false; }
-    //   method = "PUT"
-    //   url = "/api/ItemSetItem/{0}M".format(origcode)
-    // }
+    url = "/api/ItemSetItem"
+    if (exists) {
+      url = "/api/ItemSetItem/{0}M".format(origcode)
+    }
   }
   item = processItem(item, setItem); // reassignment not really needed
   // submit

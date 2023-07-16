@@ -1,0 +1,7 @@
+<script>
+window.addEventListener("load", _ => {
+  if (!['194', '43860', '42109'].includes(JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"])) {
+    document.getElementById("auxiliary-container").style.display = "none";
+  }
+});
+</script>
