@@ -1,0 +1,42 @@
+<script>
+  function processData(data) {
+    document.getElementById("7a98ac0a-f214-69bb-cc3f-3a0d5ab495ca_UserDefinedFieldTwo").value = data["isMember"];
+    document.getElementById("7a98ac0a-f214-69bb-cc3f-3a0d5ab495ca_UserDefinedFieldTwo").dispatchEvent(new Event("change", {bubbles:true}));
+    document.getElementById("7a98ac0a-f214-69bb-cc3f-3a0d5ab495ca_UserDefinedFieldOne").value = data["iMIS ID"];
+    document.getElementById("7a98ac0a-f214-69bb-cc3f-3a0d5ab495ca_UserDefinedFieldOne").dispatchEvent(new Event("change", {bubbles:true}));
+  }
+  async function wakeup() {
+    fetch('/api/httptriggerwakeup')
+  }
+  async function checkEmail() {
+    const data = await fetch('/api/HttpTriggerEOYConfMembCheck',
+        {
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          method: "POST",
+          body: JSON.stringify({email: document.getElementById("7a98ac0a-f214-69bb-cc3f-3a0d5ab495ca_EmailAddress").value})
+    }).then(function(response) { return response.json() })
+      .catch(function(err) { console.log('Failed to fetch page: ', err); return {};});
+    if (data) { processData(data); }
+  }
+
+window.addEventListener("load", _ => {
+  var p1time = 0.0;
+  var p2time = 0.0;
+  const obs = new MutationObserver((ml) => {
+    const now = window.performance.now()-2000; // don't trigger again within 2 second
+    for (const m of ml) {
+      if (m.target.id == "page_1" && m.oldValue == "display: none;") {
+        if (now > p1time) { wakeup(); }
+        p1time = now+2000;
+      }
+      else if ((m.target.id == "page_2" && m.oldValue == "display: none;") || (m.target.id == "page_3" && m.oldValue == "display: none;")) {
+        if (now > p2time) { checkEmail(); }
+        p2time = now+2000;
+      }
+    }
+  });
+  obs.observe(document.getElementById("page_1"), { attributeFilter: ["style"], attributeOldValue: true });
+  obs.observe(document.getElementById("page_2"), { attributeFilter: ["style"], attributeOldValue: true });
+  obs.observe(document.getElementById("page_3"), { attributeFilter: ["style"], attributeOldValue: true });
+});
+</script>
