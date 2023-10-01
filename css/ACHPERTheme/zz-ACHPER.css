@@ -109,14 +109,42 @@ h6, .h6 {
     border-color: rgba(0, 0, 0, 0);
 }
 
-.ThirdButton,
-.ThirdButton:visited{
+.ThirdButton, .ThirdButton:visited{
     background-color: #7E3281;
 }
 
-.ThirdButton:hover,
-.ThirdButton:focus{
+.ThirdButton:hover, .ThirdButton:focus{
     background-color: #2e1851;
+}
+.ForthButton, .ForthButton:visited{
+    background-color: #BF1C7B;
+}
+.ForthButton:hover, .ForthButton:focus{
+    background-color: #751b50;
+}
+.FifthButton, .FifthButton:visited{
+    background-color: #489E45;
+}
+.FifthButton:hover, .FifthButton:focus{
+    background-color: #1d591b;
+}
+.sixthButton, .sixthButton:visited{
+    background-color: #9CC43D;
+}
+.sixthButton:hover, .sixthButton:focus{
+    background-color: #577315;
+}
+.seventhButton, .seventhButton:visited{
+    background-color: #223378;
+}
+.seventhButton:hover, .seventhButton:focus{
+    background-color: #08154d;
+}
+.eighthButton, .eighthButton:visited{
+    background-color: #EA3C24;
+}
+.eighthButton:hover, .eighthButton:focus{
+    background-color: #9e1a08;
 }
 
 .clearQ .rgHeader{
