@@ -1,0 +1,49 @@
+<script>
+    async function AVICnewAddToCart(button, prodcode) {
+        button.disabled = true;
+        button.value = button.value + ' \u2026';
+        await AVICaddToCart(prodcode);
+        window.location.hash = `#${prodcode}`;
+        window.location.reload();
+    }
+    async function ACHmodifyCartButtons() {
+        const udata = JSON.parse(document.getElementById("__ClientContext").value);
+        const uid = udata["loggedInPartyId"]
+        const allowed = await AVICapiData("/api/iqa?QueryName=$/ACHPERVIC/Store%20Queries/BOOL-Allowed%20to%20acquire%20VCE%20resources");
+        for (const elem of document.querySelectorAll('tr[id*="ciProductList"][role="row"]')) {
+            if (elem.children.length == 2) {
+                const prodcode = elem.children[1].innerHTML;
+                if (prodcode != undefined && prodcode != "") {
+                    const button = elem.querySelector("input[type=button]");
+                    while (button.previousElementSibling != null) { button.previousElementSibling.remove(); } // remove quantity
+                    if (udata["isAnonymous"]) {
+                        const newbutton = document.createElement("a");
+                        //'<a class="TextButton PrimaryButton" href="/achper/signin">Log in</a>'
+                        newbutton.classList = "TextButton PrimaryButton";
+                        newbutton.href = `/achper/signin?LoginRedirect=true&returnurl=${window.location.pathname}${window.location.hash}`;
+                        newbutton.innerHTML = "Log in";
+                        button.after(newbutton);
+                        button.remove();
+                    } else {
+                        if (allowed["Count"] == 0) {
+                            const newbutton = document.createElement("a");
+                            //'<a class="TextButton" href="mailto:achper@achper.vic.edu.au?subject=Access%20VCE%20Resources%20-%20ID%20'+jdata['loggedInPartyId']+'&body=Please%20send%20this%20email%20and%20we%20will%20update%20your%20user%20ID%20('+jdata['loggedInPartyId']+')%20so%20you%20can%20order%20VCE%20resources%20online%2C%20usually%20the%20same%20day.%0D%0AThis%20is%20a%20screening%20process%20to%20ensure%20only%20current%20teachers%20access%20these%20resources.%0D%0AYou%20can%20also%20call%209274%208900%20for%20an%20immediate%20response.">Request Access</a>'
+                            newbutton.classList = "TextButton";
+                            newbutton.href = `mailto:achper@achper.vic.edu.au?subject=Access%20VCE%20Resources%20-%20ID%20${uid}&body=Please%20send%20this%20email%20and%20we%20will%20update%20your%20user%20ID%20(${uid})%20so%20you%20can%20order%20VCE%20resources%20online%2C%20usually%20the%20same%20day.%0D%0AThis%20is%20a%20screening%20process%20to%20ensure%20only%20current%20teachers%20access%20these%20resources.%0D%0AYou%20can%20also%20call%209274%208900%20for%20an%20immediate%20response.`;
+                            newbutton.innerHTML = "Request Access";
+                            button.after(newbutton);
+                            button.remove();
+                        } else {
+                            button.onclick = (event) => AVICnewAddToCart(button, prodcode);
+                            if (window.location.hash.slice(1) == prodcode) {
+                                button.value = button.value + ' \u2713';
+                                button.disabled = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    window.addEventListener("DOMContentLoaded", ACHmodifyCartButtons);
+</script>

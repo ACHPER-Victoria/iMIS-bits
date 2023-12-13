@@ -7,15 +7,29 @@ async function AVICnewAddToCart(button, prodcode) {
     window.location.reload();
 }
 function ACHmodifyCartButtons() {
+    const udata = JSON.parse(document.getElementById("__ClientContext").value);
+    const uid = udata["loggedInPartyId"]
+    
     for (const elem of document.querySelectorAll('tr[id*="ciProductList"][role="row"]')) {
         if (elem.children.length == 2) {
             const prodcode = elem.children[1].innerHTML;
             if (prodcode != undefined && prodcode != "") {
                 const button = elem.querySelector("input[type=button]");
-                button.onclick = (event) => AVICnewAddToCart(button, prodcode);
-                if (window.location.hash.slice(1) == prodcode) {
-                    button.value = button.value + ' \u2713';
-                    button.disabled = true;
+                while (button.previousElementSibling != null) { button.previousElementSibling.remove(); } // remove quantity
+                if (udata["isAnonymous"]) {
+                    const newbutton = document.createElement("a");
+                    //'<a class="TextButton PrimaryButton" href="/achper/signin">Log in</a>'
+                    newbutton.classList = "TextButton PrimaryButton";
+                    newbutton.href = `/achper/signin?LoginRedirect=true&returnurl=${window.location.pathname}${window.location.hash}`;
+                    newbutton.innerHTML = "Log in";
+                    button.after(newbutton);
+                    button.remove();
+                } else {
+                    button.onclick = (event) => AVICnewAddToCart(button, prodcode);
+                    if (window.location.hash.slice(1) == prodcode) {
+                        button.value = button.value + ' \u2713';
+                        button.disabled = true;
+                    }
                 }
             }
         }
