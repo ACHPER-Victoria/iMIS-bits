@@ -60,13 +60,17 @@ function getOrgFromID(id) {
   else { return null; }
 }
 function getOrgsFromNo(schoolno) {
-  var params = [["Sector", "GOVERNMENT"], ["SchoolNumber", "eq:{0}".format(schoolno.trim())]];
+  var params = [["SchoolNum", "eq:{0}".format(schoolno.trim())]];
   var ids = [];
+  for(let i of apiIterator("/api/AVIC_AS_DATA", params)) {
+    var id = i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0];
+    if(id != "" && !ids.includes(id)) { ids.push(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0]) }
+  }
+  params = [["Sector", "GOVERNMENT"], ["SchoolNumber", "eq:{0}".format(schoolno.trim())]];
   for(let i of apiIterator("/api/AO_OrganisationsData", params)) {
     // check id to make sure org type... nevermind, there was only 2 and they were weirds.
-    if(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0] != "") {
-      ids.push(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0])
-    }
+    var id = i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0];
+    if(id != "" && !ids.includes(id)) { ids.push(i["PrimaryParentIdentity"]["IdentityElements"]["$values"][0]) }
   }
   return ids;
 }
@@ -74,7 +78,7 @@ function getOrgsFromNo(schoolno) {
 function mapRow(fields, row) {
   var mr = {};
   for (const [key, value] of Object.entries(fields)) {
-    if (row[value]) {
+    if (value !="" && row[value]) {
       mr[key] = row[value].trim();
     } else {
       mr[key] = null;
@@ -201,7 +205,7 @@ function updateOrgData(id, fields, row, fundingcat, removeold) {
     result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, params);
     if (result[0] && result[1]["Count"] == 0) {
       //create
-      data = buildContactData(id, "AVIC_AS_FUNDING_CONTACT", values["imisid"], "Funding_Person_ID", fundingcat);
+      data = buildContactData(id, "AVIC_AS_FUNDING_CONTACT", values["imisid"], "Funding_Person_ID", fundingcat, "");
       result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, [], data, "POST");
       if (!result[0]) {
         importlog("uO AS FC Error: {0}".format(values["imisid"]));
@@ -210,11 +214,13 @@ function updateOrgData(id, fields, row, fundingcat, removeold) {
       }
     } else { console.log("Skipped: Org: {0}, ID: {1}".format(id, values["imisid"]))}
   } else {
-    // check if there exists a funding contact there, if not make a dummy one.
+    // check if there exists a funding contact there, if not make a dummy one. take last years if there's one...
     var params = [["ID", id], ["FundingCategory", fundingcat]];
     result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, params);
     if (result[0] && result[1]["Count"] == 0) {
-      data = buildContactData(id, "AVIC_AS_FUNDING_CONTACT", 0, "Funding_Person_ID", fundingcat);
+      // get last years...
+      var ly = getLastYearCat(id, fundingcat);
+      data = buildContactData(id, "AVIC_AS_FUNDING_CONTACT", ly[0], "Funding_Person_ID", fundingcat, ly[1]);
       result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, [], data, "POST");
       if (!result[0]) {
         importlog("uO AS FC Error: {0}".format(values["imisid"]));
@@ -223,10 +229,24 @@ function updateOrgData(id, fields, row, fundingcat, removeold) {
       }
     }
   }
-  if (values["achid"]) {
-    data = buildContactData(id, "AVIC_AS_ACH_CONTACT", contactid, "ACH_Staff_ID", fundingcat);
+  // if (values["achid"]) {
+  //   data = buildContactData(id, "AVIC_AS_ACH_CONTACT", contactid, "ACH_Staff_ID", fundingcat);
+  // }
+  // lol why was this here:
+  //var result = dorequest(url.format(id));
+}
+
+function getLastYearCat(id, fc) {
+  ly = [0, ""];
+  var prevcat = "{0}{1}".format(fc.slice(0,-2),parseInt(fc.slice(-2))-1);
+  var params = [["ID", id], ["FundingCategory", prevcat]];
+  result = dorequest("/api/AVIC_AS_FUNDING_CONTACT", null, null, params);
+  if (result[0] && result[1]["Count"] > 0) {
+    var item = result[1]["Items"]["$values"][0];
+    ly[0] = genericProp(item, "Funding_Person_ID");
+    ly[1] = genericProp(item, "Role");
   }
-  var result = dorequest(url.format(id));
+  return ly;
 }
 
 function OrgDataAppend(data, id) {
@@ -449,6 +469,11 @@ ASCONTACT = {
                 "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
                 "Name": "FundingCategory",
                 "Value": ""
+            },
+            {
+                "$type": "Asi.Soa.Core.DataContracts.GenericPropertyData, Asi.Contracts",
+                "Name": "Role",
+                "Value": ""
             }
         ]
     }
@@ -479,9 +504,10 @@ function setOrgData(obj, values) {
   if (values.hasOwnProperty("Area")) { genericProp(obj, "Area", values["Area"]); }
   if (values.hasOwnProperty("ssvregabb")) { genericProp(obj, "SSV_REGION", values["ssvregabb"]); }
 }
-function buildContactData(id, ent_type, contactid, id_prop, fundingcat) {
+function buildContactData(id, ent_type, contactid, id_prop, fundingcat, role) {
   var obj = JSON.parse(JSON.stringify(ASCONTACT));
   genericProp(obj, "ID", id);
+  genericProp(obj, "Role", role);
   obj["EntityTypeName"] = ent_type
   if (contactid) {
     if (!isNaN(contactid)) { genericProp(obj, id_prop, parseInt(contactid, 10)); }
