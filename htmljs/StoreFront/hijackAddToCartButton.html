@@ -1,0 +1,25 @@
+<script>
+async function AVICnewAddToCart(button, prodcode) {
+    button.disabled = true;
+    button.value = button.value + ' \u2026';
+    await AVICaddToCart(prodcode);
+    window.location.hash = `#${prodcode}`;
+    window.location.reload();
+}
+function ACHmodifyCartButtons() {
+    for (const elem of document.querySelectorAll('tr[id*="ciProductList"][role="row"]')) {
+        if (elem.children.length == 2) {
+            const prodcode = elem.children[1].innerHTML;
+            if (prodcode != undefined && prodcode != "") {
+                const button = elem.querySelector("input[type=button]");
+                button.onclick = (event) => AVICnewAddToCart(button, prodcode);
+                if (window.location.hash.slice(1) == prodcode) {
+                    button.value = button.value + ' \u2713';
+                    button.disabled = true;
+                }
+            }
+        }
+    }
+}
+window.addEventListener("DOMContentLoaded", ACHmodifyCartButtons);
+</script>
