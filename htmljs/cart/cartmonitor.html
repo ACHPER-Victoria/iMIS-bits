@@ -19,25 +19,27 @@ function ACHprocessInvoices(ds) {
   var finEnt = ds["entity"];
   var ninvoices = [];
   var removedinvoice = false;
-  ds["ComboOrder"]["Invoices"]["$values"].forEach(function(e, i) {
-    if (finEnt === null || finEnt === "") {
-      if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
-        finEnt = e["FinancialEntity"]["FinancialEntityId"];
-        ninvoices.push(e);
-      }
-    } else {
-      // check if invoice matches finEnt
-      if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
-        if (finEnt === e["FinancialEntity"]["FinancialEntityId"]) {
+  if (ds["ComboOrder"].hasOwnProperty("Invoices")) {
+    ds["ComboOrder"]["Invoices"]["$values"].forEach(function(e, i) {
+      if (finEnt === null || finEnt === "") {
+        if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
+          finEnt = e["FinancialEntity"]["FinancialEntityId"];
           ninvoices.push(e);
-        } else {
-          // add to message list
-          ds["removenames"].push("Invoice Number "+ e["InvoiceNumber"]);
+        }
+      } else {
+        // check if invoice matches finEnt
+        if (e.hasOwnProperty("FinancialEntity") && e["FinancialEntity"].hasOwnProperty("FinancialEntityId")) {
+          if (finEnt === e["FinancialEntity"]["FinancialEntityId"]) {
+            ninvoices.push(e);
+          } else {
+            // add to message list
+            ds["removenames"].push("Invoice Number "+ e["InvoiceNumber"]);
+          }
         }
       }
-    }
-  });
-  ds["ComboOrder"]["Invoices"]["$values"] = ninvoices
+    });
+    ds["ComboOrder"]["Invoices"]["$values"] = ninvoices
+  }
   // post to order update
   if (ds["remove"].length > 0) {
     ACHORDTMPL["Order"] = ds["ComboOrder"]["Order"];
@@ -215,9 +217,13 @@ function ACHprocessCart(data) {
       removenames: [],
       olines: cart["ComboOrder"]["Order"]["Lines"]["$values"],
       ComboOrder: cart["ComboOrder"],
-      ilines: cart["ComboOrder"]["Invoices"]["$values"],
       cart: cart,
       CartId: cart["CartId"]
+    }
+    if (cart["ComboOrder"].hasOwnProperty("Invoices")) {
+      datastruct["ilines"] = cart["ComboOrder"]["Invoices"]["$values"];
+    } else {
+      datastruct["ilines"] = [];
     }
     // check for Order items:
     ACHgetOrderEntity(datastruct);
