@@ -29,9 +29,10 @@ TEMPLATE = {
     "IsAmountDefined": True
 }
 
-def genItemPrice(iid, price):
+# pricetype default to "AVIC - Full Member"
+def genItemPrice(iid, price, pricetype="aa413b20-a64a-4115-b97e-92187de60164"):
     i = None
-    for i in api.apiIterator("ItemPrice", [["ItemId", iid], ["PriceSheetId", "aa413b20-a64a-4115-b97e-92187de60164"]]):
+    for i in api.apiIterator("ItemPrice", [["ItemId", iid], ["PriceSheetId", pricetype]]):
         pass
     i["DefaultPrice"] = json.loads(json.dumps(TEMPLATE))
     i["DefaultPrice"]["Amount"] = price
@@ -47,6 +48,9 @@ def addVICFPricing(ii):
         return print(f"MISSING TEMP PRICE. Skipping: {ii['ItemCode']}" )
     oldPrice = ii["TempDefaultPrice"]
     memPrice = oldPrice - (20/100*oldPrice)
+    # set "member" price as normal default price...
+    np = genItemPrice(ii['ItemCode'], oldPrice, "Member")
+    api.put("ItemPrice", ii["ItemCode"], np)
     np = genItemPrice(ii['ItemCode'], memPrice)
     try: api.put("ItemPrice", ii["ItemCode"], np)
     except HTTPError as e:
