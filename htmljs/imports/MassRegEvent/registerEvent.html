@@ -36,3 +36,11 @@
 <p>Progress: <span id="mergecount"></span>/<span id="mergetotal"></span></p>
 <p>Messages</p>
 <textarea id="mergelog" rows="25" cols="100" style="width: 40em;"></textarea>
+<h3>Invoices to reverse:</h3>
+<p>iMIS ID, Invoice ID, Name, Description</p>
+<select id="invoices" size="20" multiple>
+  <option value="">(None)</option>
+</select>
+<p>
+<a class="TextButton" id="reversebutton" href="#" onclick="startReverse();return false;" disabled="disabled">Start Reversing</a>
+</p>

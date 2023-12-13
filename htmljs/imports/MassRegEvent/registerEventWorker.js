@@ -45,6 +45,11 @@ onmessage = function(e) {
         //CSVFILE, fields, actualevent, regopts, memopt, memopts, memdate
         startProcessing(arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7]);
         break;
+      case 'startReversing':
+          token = arg[0];
+          //CSVFILE, fields, actualevent, regopts, memopt, memopts, memdate
+          reverseInvoices(arg[1]);
+          break;
       default:
         console.error('invalid type passed in');
         break;
@@ -69,6 +74,9 @@ function incrementProgress() {
 }
 
 function processMember(item, date) {
+  // first find any membership invoice
+  findInvoice(genericProp(item, "ID"));
+
   var modified = false;
   if (genericProp(item, "MemberType") != "VICF") {
     genericProp(item, "MemberType", "VICF");
@@ -504,4 +512,111 @@ NEWREGTEMPLATE = {
   "RegisteredBy": "194",
   "BillTo": "33276",
   "Waitlist": false
+}
+
+// Invoice related stuff
+// dorequest(url, func = null, errfunc = null, params = [], data = null, method="POST", put_token=true)
+function findInvoice(imisid) {
+  var result = dorequest("/api/InvoiceSummary", null, null,
+    [["SourceSystem", "DUES"], ["Balance", "gt:0"], ["SoldToPartyId", imisid]]);
+  if (result[0]) {
+    if (result[1]["Count"] == 1) {
+      var item = result[1]["Items"]["$values"][0];
+      postMessage({
+        type: "getInvoiceData",
+        data: [imisid, item["InvoiceId"], item["SoldToParty"]["Name"], item["Description"]]
+      });
+    }
+    else if (result[1]["Count"] > 1) {
+      mergelog("Found too many invoices for iMIS ID {0}. You should look this iMIS ID up and reverse membership invoices manually.".format(imisid));
+    }
+  }
+}
+
+// result[0] yay/nay, result[1]["Result"] yay result[1]["Message"] if err
+function checkInvoice(invid) {
+  var template = JSON.parse(JSON.stringify(CHECKTEMPLATE));
+  template["Parameters"]["$values"][0]["$value"] = invid;
+  return dorequest("/api/Invoice/_execute", null, null, [], template);
+}
+
+function reverseInvoices(invoices) {
+  postMessage({
+    type: "setMaxProgress",
+    data: invoices.length,
+  });
+  // ghetto reset count
+  COUNT = -1;
+  incrementProgress();
+  for (let invid of invoices) {
+    var result = checkInvoice(invid);
+    if (result[0] && result[1]["IsSuccessStatusCode"]) { 
+      // do actual reversal...
+      result = reverseInvoice(invid);
+      if (!result[0]) { mergelog("Error reversing invoice ID {0} (this is not invoice number)".format(invid)); }
+      else if (result[0] && !result[1]["IsSuccessStatusCode"]) { mergelog("Error reversing invoice ID {0} (this is not invoice number). Error message: {1}".format(invid, result[1]["Message"])); }
+      // success
+      else { postMessage({ type: "doneInvoice", data: invid }); }
+    }
+    else if (!result[0]) { mergelog("Error reversing invoice ID {0} (this is not invoice number)".format(invid)); }
+    else { mergelog("Error reversing invoice ID {0} (this is not invoice number). Error message: {1}".format(invid, result[1]["Message"])); }
+    incrementProgress();
+  }
+  mergelog("Done reversing.");
+}
+
+function reverseInvoice(invid) {
+  t = (new Date()).toISOString().slice(0,19);
+  var template = JSON.parse(JSON.stringify(REVERSETEMPLATE));
+  template["Parameters"]["$values"][0]["AdjustmentDate"] = t;
+  template["Parameters"]["$values"][0]["InvoiceID"] = invid;
+  return dorequest("/api/Invoice/_execute", null, null, [], template);
+}
+
+CHECKTEMPLATE = {
+  "$type": "Asi.Soa.Core.DataContracts.GenericExecuteRequest, Asi.Contracts",
+  "OperationName": "CanInvoiceBeReversed",
+  "EntityTypeName": "Invoice",
+  "Parameters": {
+    "$type": "System.Collections.ObjectModel.Collection`1[[System.Object, mscorlib]], mscorlib",
+    "$values": [
+      {
+        "$type": "System.Int32",
+        "$value": 0
+      }
+    ]
+  },
+  "ParameterTypeName": {
+    "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+    "$values": [
+      "System.Int32"
+    ]
+  },
+  "UseJson": false
+}
+REVERSETEMPLATE = {
+  "$type": "Asi.Soa.Core.DataContracts.GenericExecuteRequest, Asi.Contracts",
+  "OperationName": "ProcessAccrualReversal",
+  "EntityTypeName": "Invoice",
+  "Parameters": {
+    "$type": "System.Collections.ObjectModel.Collection`1[[System.Object, mscorlib]], mscorlib",
+    "$values": [
+      {
+        "$type": "Asi.Soa.Commerce.DataContracts.InvoiceActionDuesReversalData, Asi.Contracts",
+        "InvoiceID": 0, 
+        "AdjustmentDate" :"2023-10-30T00:00:00", 
+        "AdjustmentReason": "Conference complimentary membership", 
+        "ReverseShipping" : true, 
+        "ReverseHandling" : true, 
+        "AffectsInventory": true 
+      }
+    ]
+  },
+  "ParameterTypeName": {
+    "$type": "System.Collections.ObjectModel.Collection`1[[System.String, mscorlib]], mscorlib",
+    "$values": [
+      "Asi.Soa.Commerce.DataContracts.InvoiceActionDuesReversalData, Asi.Contracts"
+    ]
+  },
+  "UseJson": false
 }

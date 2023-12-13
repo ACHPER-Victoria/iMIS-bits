@@ -51,6 +51,10 @@ myWorker.onmessage = function(ev) {
     gotMemOption(data);
   } else if( type === 'endProcessing') {
     endProcessing(data);
+  } else if( type === 'getInvoiceData') {
+    gotInvoiceData(data);
+  } else if( type === 'doneInvoice') {
+    doneInvoice(data);
   } else {
     console.error('An Invalid type has been passed in');
   }
@@ -98,6 +102,18 @@ function gotRegOption(data) {
     index++;
   }
   disableUI(false, true);
+}
+
+function gotInvoiceData(data) {
+  // data is [imisid, item["InvoiceId"], item["SoldToParty"]["Name"], item["Description"]]
+  var selectfield = jQuery("#invoices");
+  selectfield.append(jQuery("<option selected></option>")
+    .attr("value", data[1]).text("{0}, {1}, {2}, {3}".format(data[0], data[1], data[2], data[3]))
+  );
+}
+
+function doneInvoice(data) {
+  jQuery("#invoices option[value='{0}']".format(data)).remove();
 }
 
 function changeMemField(event) {
@@ -163,7 +179,10 @@ function disableUI(disable, start=true) {
     document.getElementById("EventPullDown").removeAttribute("disabled");
     document.getElementById("resetbutton").removeAttribute("disabled");
     document.getElementById("clist").removeAttribute("disabled");
-    if (start) { document.getElementById("startbutton").removeAttribute("disabled"); }
+    if (start) { 
+      document.getElementById("startbutton").removeAttribute("disabled"); 
+      document.getElementById("reversebutton").removeAttribute("disabled"); 
+    }
   }
 }
 
@@ -205,6 +224,19 @@ function startProcessing() {
 function endProcessing(data) {
   mergelog("Done.");
   disableUI(false, true);
+}
+
+function startReverse() {
+  // allow not everyone and no alliances from to clear a list.
+  jQuery('textarea#mergelog').val("Reversing...");
+  var invoices = jQuery("#invoices").val();
+  // require invoices
+  if ((invoices.length == 1 && invoices[0] == "") || invoices.length < 1) {
+    mergelog("Require invoices to be selected...");
+    return;
+  }
+  disableUI(true);
+  workerMaker('startReversing', [document.getElementById("__RequestVerificationToken").value, invoices]);
 }
 
 window.addEventListener("load", _ => {
