@@ -965,3 +965,9 @@ display: block !important;
 .container, .SliderPage1 {
   max-width: 1280px; /* make a lil wider... */
 }
+
+/* Subject area coloured titles*/
+div[id*=ProductListPE] h2.PanelTitle { color: #223378; }
+div[id*=ProductListHHD] h2.PanelTitle { color: #EA3C24; }
+div[id*=ProductListOES] h2.PanelTitle { color: #489E45; }
+div[id*=ProductListSAR] h2.PanelTitle { color: #BF1C7B; }
