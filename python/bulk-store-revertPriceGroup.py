@@ -18,9 +18,6 @@ home = expanduser("~")
 
 api = openAPI(json.load(open(join(home, ".iMIS.json"), "rb")), [413, 418, 429, 502, 503, 504])
 
-PRICE_SHEET_AVICF = "aa413b20-a64a-4115-b97e-92187de60164"
-PRICE_SHEET_ORGAVICF = "24660ce3-d318-4cab-87ac-0666aa70d712"
-
 TEMPLATE = {
     "$type": "Asi.Soa.Core.DataContracts.MonetaryAmountData, Asi.Contracts",
     "Amount": 9999.9900,
@@ -41,10 +38,10 @@ def genItemPrice(iid, price, pricetype="aa413b20-a64a-4115-b97e-92187de60164"):
     i["DefaultPrice"]["Amount"] = price
     return i
 
-def modifyExisting(iid, price, sheetid):
-    pps = api.get("ProductPriceSheet", f"~{sheetid}|{iid}")
+def modifyExisting(iid, price):
+    pps = api.get("ProductPriceSheet", f"~aa413b20-a64a-4115-b97e-92187de60164|{iid}")
     genericProp(pps, "ItemPrice1", price)
-    api.put("ProductPriceSheet", f"~{sheetid}|{iid}", pps)
+    api.put("ProductPriceSheet", f"~aa413b20-a64a-4115-b97e-92187de60164|{iid}", pps)
 
 def addVICFPricing(ii):
     if "TempDefaultPrice" not in ii:
@@ -52,22 +49,17 @@ def addVICFPricing(ii):
     oldPrice = ii["TempDefaultPrice"]
     memPrice = oldPrice - (20/100*oldPrice)
     # set "member" price as normal default price...
-    np = genItemPrice(ii['ItemCode'], oldPrice, "Member")
+    np = genItemPrice(ii['ItemCode'], oldPrice, "Standard") #Member
     api.put("ItemPrice", ii["ItemCode"], np)
-    # set price sheet on AVICF
-    np = genItemPrice(ii['ItemCode'], memPrice, PRICE_SHEET_AVICF)
+    np = genItemPrice(ii['ItemCode'], memPrice, "Member")
     try: api.put("ItemPrice", ii["ItemCode"], np)
     except HTTPError as e:
         if e.response.status_code == 500:
             #Assume I need to modify existing ProductPriceSheet
-            modifyExisting(ii['ItemCode'], memPrice, PRICE_SHEET_AVICF)
-    # set price sheet on ORG-AVICF
-    np = genItemPrice(ii['ItemCode'], memPrice, PRICE_SHEET_ORGAVICF)
-    try: api.put("ItemPrice", ii["ItemCode"], np)
-    except HTTPError as e:
-        if e.response.status_code == 500:
-            #Assume I need to modify existing ProductPriceSheet
-            modifyExisting(ii['ItemCode'], memPrice, PRICE_SHEET_ORGAVICF)
+            #modifyExisting(ii['ItemCode'], memPrice)
+            #error out
+            print(f"Error on: {item['ItemCode']}")
+            exit(1)
     print(f"Done: {item['ItemCode']}")
 
 def isActive(ii):
@@ -78,6 +70,5 @@ count = 0
 for item in api.apiIterator("Item", [["ItemClassId", f"SALES-{CAT}"]]):
     if isActive(item):
         addVICFPricing(item)
-        api.put("Item", item["ItemCode"], item)
     count += 1
     #if count > 2: break
