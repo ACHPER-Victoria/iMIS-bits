@@ -6,12 +6,12 @@ async function AVICapiData(endpoint, data=null, method="GET") {
             "RequestVerificationToken": document.getElementById("__RequestVerificationToken").value
         }
     }
-    if (data != null) {opts["body"] = JSON.stringify(data); }
+    if (data != null) { opts["body"] = JSON.stringify(data); }
     const response = await fetch(endpoint, opts);
     return await response.json();
 }
 
-function createOrderLine(itemData) {
+function createOrderLine(itemData, lineno) {
     return {
         "$type": "Asi.Soa.Commerce.DataContracts.OrderLineData, Asi.Contracts", 
         "OrderLineId": self.crypto.randomUUID(),
@@ -20,14 +20,15 @@ function createOrderLine(itemData) {
             "$type": "System.Nullable`1[[Asi.Soa.Commerce.DataContracts.QuantityData, Asi.Contracts]], mscorlib", 
             "Amount": 1
         },
-        "LineNumber": 1,
+        "LineNumber": lineno,
         "SourceCode": "",
         "CanCombine": true,
+        "UsesPriceGroup" : true
     }
 }
 
 function getBillingAddress(user) {
-    for (address of user["Addresses"]["$values"]) {
+    for (const address of user["Addresses"]["$values"]) {
         if (address["AddressPurpose"] == "Billing") {
             return address;
         }
@@ -36,10 +37,6 @@ function getBillingAddress(user) {
 }
 
 async function AVICcreateCart(uid) {
-    // get user info, OrgID and Billing Address
-    const user = await AVICapiData(`/api/Person/${uid}`);
-    var bid = user["PrimaryOrganization"]["OrganizationPartyId"];
-    if (bid == undefined) { bid = uid; }
     const cartpost = {
         "$type": "Asi.Soa.Commerce.DataContracts.CartData, Asi.Contracts",
         "UserId": uid,
@@ -57,7 +54,7 @@ async function AVICcreateCart(uid) {
                 },
                 "BillToCustomerParty": {
                     "$type": "Asi.Soa.Commerce.DataContracts.CustomerPartyData, Asi.Contracts", 
-                    "PartyId": bid
+                    "PartyId": uid
                 },
                 "OriginatorCustomerParty": {
                     "$type": "Asi.Soa.Commerce.DataContracts.CustomerPartyData, Asi.Contracts",
@@ -87,8 +84,8 @@ async function AVICcreateCart(uid) {
     return await AVICapiData("/api/cart", cartpost, "POST");
 }
 
-async function AVICgetOrCreateCart() {
-    var uid = JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"];
+async function AVICgetOrCreateCart(uid) {
+    
     const result = await AVICapiData(`/api/Cart?UserId=${uid}&UpdatedBy=${uid}`);
     cart = null;
     if (result["Items"]["$values"].length < 1) {
@@ -99,14 +96,31 @@ async function AVICgetOrCreateCart() {
     return cart;
 }
 
+async function AVICchangeBillToOrg(uid, order) {
+    // get user info, OrgID
+    const user = await AVICapiData(`/api/Person/${uid}`);
+    var oid = user["PrimaryOrganization"]["OrganizationPartyId"];
+    if (oid == undefined) { return order; }
+    order["BillToCustomerParty"]["PartyId"] = oid;
+    order = await AVICapiData("/api/Order/_execute", {
+        "$type": "Asi.Soa.Commerce.DataContracts.OrderPriceUpdateRequest, Asi.Contracts",
+        "EntityTypeName": "Order",
+        "OperationName": "UpdatePricing",
+        "Order": order
+    }, "POST");
+    return order;
+}
+
 async function AVICaddToCart(productID) {
+    const uid = JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"];
     // get cart
-    var cart = await AVICgetOrCreateCart();
+    var cart = await AVICgetOrCreateCart(uid);
     // get item
-    const itemresult = await AVICapiData(`/api/Item/${productID}`);
+    const itemresult = await AVICapiData(`/api/ItemSummary/${productID}`);
     var order = cart["ComboOrder"]["Order"];
     // append to order
-    order["Lines"]["$values"].push(createOrderLine(itemresult));
+    const orderlines = order["Lines"]["$values"].length;
+    order["Lines"]["$values"].push(createOrderLine(itemresult, orderlines+1));
     // update pricing
     order = await AVICapiData("/api/Order/_execute", {
         "$type": "Asi.Soa.Commerce.DataContracts.OrderPriceUpdateRequest, Asi.Contracts",
@@ -114,8 +128,22 @@ async function AVICaddToCart(productID) {
         "OperationName": "UpdatePricing",
         "Order": order
     }, "POST");
+    //post... again, since the first post doesn't get correct pricing.
+    order = await AVICapiData("/api/Order/_execute", {
+        "$type": "Asi.Soa.Commerce.DataContracts.OrderPriceUpdateRequest, Asi.Contracts",
+        "EntityTypeName": "Order",
+        "OperationName": "UpdatePricing",
+        "Order": order
+    }, "POST");
+    
     // replace order data in cart with above
     cart["ComboOrder"]["Order"] = order;
-    // PUT cart update
+    await AVICapiData(`/api/cart/${cart["CartId"]}`, cart, "PUT");
+    // get updated cart to attempt to change billto orgid
+    cart = await AVICgetOrCreateCart(uid);
+    order = cart["ComboOrder"]["Order"];
+    order = await AVICchangeBillToOrg(uid, order); // change bill to user to bill to org
+    // replace order data in cart with above
+    cart["ComboOrder"]["Order"] = order;
     await AVICapiData(`/api/cart/${cart["CartId"]}`, cart, "PUT");
 }
