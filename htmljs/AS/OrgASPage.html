@@ -123,7 +123,54 @@ function checkSisterCards() {
     error: function(data) { }
   });
 }
+
+function modifySelect(doc) {
+  const node = doc.querySelector("#ctl00_TemplateBody_PanelFieldEditor_AVIC_AS_Notes___Staff");
+  if (node) {
+    const id = JSON.parse(document.getElementById("__ClientContext").value)["loggedInPartyId"];
+    const staffitem = Array.from(node.options).filter(option => option.value == id)[0];
+    if (staffitem) { staffitem.selected = true; }
+  }
+}
+function setupSelectMonitor() {
+  const targetNode = document.getElementById('aspnetForm');
+  const callback = function(mutationsList, obs) {
+      for(const mutation of mutationsList) { 
+        if (mutation.type === 'childList') { 
+          // only look for div.TelerikModalOverlay
+          if (mutation.addedNodes.length > 0 && mutation.addedNodes[0].tagName == "DIV" &&
+              mutation.addedNodes[0].id == "RadWindowWrapper_ctl01_GenericWindow"
+          ) {
+            // look for attribute changes
+            // determine most appropriate and if appropriate check
+            const iframe = mutation.addedNodes[0].querySelector("iframe")
+            iframe.contentWindow.addEventListener("load", () => {
+              console.log("iframe loaded.");
+              modifySelect(iframe.contentDocument || iframe.contentWindow.document);
+              var stylecheck = 0;
+              // add mutation detector to this iframe, to see when it loads next...
+              const frameobserver = new MutationObserver((fmutationsList, fobs) => {
+                for(const fmutation of fmutationsList) { 
+                  if (fmutation.attributeName == "src") { stylecheck = 0; } // reset
+                  else if (fmutation.attributeName == "style") { stylecheck++; } // look for second style change
+                }
+                if (stylecheck == 2) {
+                  modifySelect(iframe.contentDocument || iframe.contentWindow.document);
+                  stylecheck = 0;
+                }
+              });
+              frameobserver.observe(iframe, { attributes: true, childList: true, subtree: true });
+            });
+          }
+        }
+      }
+    };
+  const observer = new MutationObserver(callback);
+  observer.observe(targetNode, { attributes: false, childList: true, subtree: false });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
+  setupSelectMonitor();
   checkSisterCards();
   jQuery('table[id$=_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_SchoolFundingContacts_multipleInstanceList_Grid1_ctl00] tbody td:nth-child(2)').each(ACHreplaceIDwithName);
   jQuery('span#ctl01_TemplateBody_WebPartManager1_gwpciOrganizationAccountTabs1_ciOrganizationAccountTabs1_AVICStaffcontact_AVIC_AS_Data\\.ACH_Staff').each(ACHreplaceIDwithName);

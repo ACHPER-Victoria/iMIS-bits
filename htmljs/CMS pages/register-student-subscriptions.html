@@ -1,0 +1,10 @@
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+    // check product type
+    const prodid = (new URLSearchParams(window.location.search)).get("iProductCode");
+    if (prodid == "VIC_Student_Membership") {
+        document.getElementById("ctl01_TemplateBody_WebPartManager1_gwpciSignupFlow_ciSignupFlow_CommunicationPreferences_CommunicationTypeRepeater_ctl03_CommunicationTypeCheckBox").parentNode.parentNode.parentNode.remove();
+        document.getElementById("ctl01_TemplateBody_WebPartManager1_gwpciSignupFlow_ciSignupFlow_CommunicationPreferences_CommunicationTypeRepeater_ctl07_CommunicationTypeCheckBox").parentNode.parentNode.parentNode.remove();
+    }
+});
+</script>
