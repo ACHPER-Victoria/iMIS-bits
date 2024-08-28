@@ -54,7 +54,7 @@
             button.after(newbutton);
             button.remove();
         } else {
-            const bypass = !["VIC-TE", "VIC-SAC"].includes(params.get("Category"));
+            const bypass = !["VIC-SAC"].includes(params.get("Category"));
             var allowed
             if (!bypass) { allowed = await AVICapiData("/api/iqa?QueryName=$/ACHPERVIC/Store%20Queries/BOOL-Allowed%20to%20acquire%20VCE%20resources"); }
             if (!bypass && allowed["Count"] == 0) {
