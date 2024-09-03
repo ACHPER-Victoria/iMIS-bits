@@ -73,23 +73,88 @@ function incrementProgress() {
   });
 }
 
+function subcontains(results, search) {
+  for (const i of results["Items"]["$values"]){
+    if (i["ItemId"] == search) { return true; }
+  }
+  return false;
+}
+function modifysub(pid, itemid) {
+  var result = dorequest("/api/Subscription/~{0}|{1}".format(pid, itemid));
+  if (!result[0]) { mergelog("Error with ModSub1-{0}: ".format(itemid)+ result[1]); return false;}
+  result[1]["Status"] = 0;
+  result = dorequest("/api/Subscription/~{0}|{1}".format(pid, itemid), null, null, [], result[1], "PUT");
+  if (!result[0]) { mergelog("Error with ModSub2-{0}: ".format(itemid)+ result[1]); return false;}
+  // now GST
+  if (itemid.endsWith("_GST")) { return true; }
+  return modifysub(pid, itemid+"_GST");
+}
+
 function processMember(item, date) {
-  // first find any membership invoice
-  findInvoice(genericProp(item, "ID"));
+  const pid = genericProp(item, "ID");
+  // first find membership invoices for display/handling
+  findInvoice(pid);
 
   var modified = false;
   if (genericProp(item, "MemberType") != "VICF") {
     genericProp(item, "MemberType", "VICF");
     modified = true;
   }
-  // check paidthru date:
-  if (genericProp(item, "PaidThrough") < date) {
-    genericProp(item, "PaidThrough", "{0}T00:00:00".format(date));
+  if (genericProp(item, "Status") != "A") {
+    genericProp(item, "Status", "A");
     modified = true;
   }
+
+  // check target membership date is less than current paid through date. Only apply target date if current paid through is less than target.
+  if (genericProp(item, "PaidThrough") <= date) {
+    genericProp(item, "PaidThrough", "{0}".format(date));
+    modified = true;
+  }
+
   if (modified) {
-    var result = dorequest("/api/CsContact/{0}".format(genericProp(item, "ID")), null, null, [], item, "PUT");
+    var result = dorequest("/api/CsContact/{0}".format(pid), null, null, [], item, "PUT");
     if (!result[1]) { mergelog("Error with Mem1: "+ result[1]); return false;}
+    // check for active and then inactive Membership fees. active first.
+    result = dorequest("/api/Subscription/?PartyId={0}&ItemId=notContain:CHAPT&Status=A".format(pid));
+    if (!result[0]) { mergelog("Error with Fee1: "+ result[1]); return false;}
+    else {
+      // check number of active results, if 1 or greater, do nothing. else check for inactive. Only need to check if they have inactive yearly, but might as well check both.
+      // Because subscriptions are base fee + GST fee, there are 2 components. That's why 2.
+      if (result[1]["Count"] < 2) {
+        var result2 = dorequest("/api/Subscription/?PartyId={0}&ItemId=notContain:CHAPT&Status=I".format(pid));
+        // We only have 1 or fewer active components.
+        // if inactive 1 or greater convert it to active (preferring yearly if they have both)
+        if (!result2[0]) { mergelog("Error with Fee1: "+ result2[1]); return false; }
+        else {
+          if (result2[1]["Count"] > 0) {
+            // check if only one or the other for monthly component is active (e.g. base fee inactive but GST fee active.) otherwise we check yearly items.
+            if (subcontains(result[1], "DUES_VICFM") && subcontains(result2[1], "DUES_VICFM_GST") ||
+              subcontains(result2[1], "DUES_VICFM") && subcontains(result[1], "DUES_VICFM_GST")
+            ) {
+              return modifysub(pid, "DUES_VICFM");
+              // convert VICF (& _GST) if it exists. This checks for combination of inactive and active GST component, or vice versa
+            } else if (subcontains(result2[1], "DUES_VICF") && subcontains(result2[1], "DUES_VICF_GST") ||
+              subcontains(result[1], "DUES_VICF") && subcontains(result2[1], "DUES_VICF_GST") ||
+              subcontains(result2[1], "DUES_VICF") && subcontains(result[1], "DUES_VICF_GST")
+            ) {
+              return modifysub(pid, "DUES_VICF");
+            } else {
+              // error, potentially lopsided membership+GST options
+              mergelog("Error: mismatching member fees (they may have base fee but no GST fee?). Check and correct this person ({0}) member fees manually please before continuing.".format(pid)); return false;
+            }
+          }
+        }
+      } else if (result[1]["Count"] > 2) {
+        mergelog("Error: Person ({0}) has more than 2 active membership fees (they likely have yearly and monthly active). Please correct immediately before proceeding.".format(pid)); return false;
+      } else {
+        // has exactly 2 items. Do one last sanity check to make sure they don't have mix and matching memberships.
+        if (subcontains(result[1], "DUES_VICF") && subcontains(result1[1], "DUES_VICFM_GST") ||
+            subcontains(result[1], "DUES_VICFM") && subcontains(result[1], "DUES_VICF_GST")
+        ) {
+          mergelog("Error: mismatching member fees (they have GST from one type, but the base fee is from a different type. Mismatched monthly/yearly). Check this person ({0}) member fees manually please and correct before continuing.".format(pid)); return false;
+        }
+      }
+    }
   }
   return true;
 }
@@ -138,7 +203,7 @@ function CheckAndRegister(eventID, imisID, funccode) {
         implementthis;
       }
       if (regOpt != funccode) {
-        // modify registration. broken at the moment. FIX PLEASE.
+        // TODO: modify registration. broken at the moment. FIX PLEASE.
         mergelog("User: {0} has changed registration. Please manually update their registration from {1} to {2}".format(imisID, regOpt, funccode))
         return true;
         //return RegisterWithTemplate(generateTemplate(imisID, eventID, associatedInvoiceID, funccode, regOpt));
@@ -174,7 +239,7 @@ function startProcessing(f, fields, actualevent, regopts, memopts, memdate) {
         if (fields["membership"] && r["data"][0][fields["membership"]].trim()) {
           if (memopts.includes(r["data"][0][fields["membership"]].trim())) { memb = true; }
         }
-        id = getUserFromID(r["data"][0][field].trim(), memb, memdate);
+        id = getUserFromID(r["data"][0][field].trim(), memb, memdate+"T00:00:00");
       }
       if (id === null) { // didn't find/or don't have ID
         mergelog("Couldn't find user for ID: "+ r["data"][0][field].trim())

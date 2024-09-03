@@ -1,0 +1,31 @@
+<script>
+function hidePaymentOption() {
+    document.getElementById("ctl01_TemplateBody_WebPartManager1_gwpciNewAutoPayInstructionCreatorCommon_ciNewAutoPayInstructionCreatorCommon_RecurringPaymentOptions").hidden = true
+    document.getElementById("ctl01_TemplateBody_WebPartManager1_gwpciNewAutoPayInstructionCreatorCommon_ciNewAutoPayInstructionCreatorCommon_RecurringPaymentOptions_1").click()
+}
+
+function ACHcheckAndHideAutopay() {
+    // staff check
+    // TODO: Maybe revisit this and make it more robust. Currently it only looks for the suppress email checkbox
+    if (document.getElementById("ctl01_TemplateBody_WebPartManager1_gwpciNewSubmitOrderButtonLinkCommon_ciNewSubmitOrderButtonLinkCommon_SuppressEmailDiv")) {
+        return;
+    }
+    const STATECHECK = ["SA ", "WA "]
+    const rows = document.querySelectorAll("div#ctl01_TemplateBody_WebPartManager1_gwpciShoppingCart_ciShoppingCart_ItemGrid tbody tr[id^='ctl01_TemplateBody_WebPartManager1_gwpciShoppingCart_ciShoppingCart_ItemGrid_ctl00__']");
+    for (const row of rows) {
+        if (row.innerText?.includes("Membership")) {
+            // check price
+            let price = parseFloat(row.lastElementChild.previousElementSibling.innerText)
+            if (price < 20) {
+                // assuming monthly and hide item
+                hidePaymentOption();
+            }
+            else if(STATECHECK.some(s => row.innerText.includes(s))) {
+                // hide manual purchase options if specific state.
+                hidePaymentOption();
+            }
+        }
+    }
+}
+window.addEventListener("DOMContentLoaded", ACHcheckAndHideAutopay);
+</script>

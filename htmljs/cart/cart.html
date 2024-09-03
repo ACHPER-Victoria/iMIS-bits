@@ -1,9 +1,13 @@
+<!-- this is currently stored in Adv Options in the properties tab of the cart page. -->
 <style>
 </style>
-<script type="text/javascript">
+<script>
 function modifyLabels() {
-  jQuery('label[for="ctl01_TemplateBody_WebPartManager1_gwpciPaymentDetails_ciPaymentDetails_PaymentMethodRadioButtonList_0"]')[0].innerHTML = "Credit Card"
-  jQuery('label[for="ctl01_TemplateBody_WebPartManager1_gwpciPaymentDetails_ciPaymentDetails_PaymentMethodRadioButtonList_1"]')[0].innerHTML = "Purchase Order"
+  var ele = null;
+  ele = jQuery('label[for="ctl01_TemplateBody_WebPartManager1_gwpciPaymentDetails_ciPaymentDetails_PaymentMethodRadioButtonList_0"]')[0];
+  if (ele) { ele.innerHTML = "Credit Card"; }
+  ele = jQuery('label[for="ctl01_TemplateBody_WebPartManager1_gwpciPaymentDetails_ciPaymentDetails_PaymentMethodRadioButtonList_1"]')[0];
+  if (ele) {ele.innerHTML = "Purchase Order"; }
 }
 window.addEventListener("DOMContentLoaded", function() {
   const targetNode = document.getElementById('ctl01_UserMessagesUpdatePanel');
