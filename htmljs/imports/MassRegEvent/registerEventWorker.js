@@ -108,6 +108,7 @@ function processMember(item, date) {
   // check target membership date is less than current paid through date. Only apply target date if current paid through is less than target.
   if (genericProp(item, "PaidThrough") <= date) {
     genericProp(item, "PaidThrough", "{0}".format(date));
+    genericProp(item, "RenewedThru", "{0}".format(date));
     modified = true;
   }
 
@@ -115,7 +116,7 @@ function processMember(item, date) {
     var result = dorequest("/api/CsContact/{0}".format(pid), null, null, [], item, "PUT");
     if (!result[1]) { mergelog("Error with Mem1: "+ result[1]); return false;}
     // check for active and then inactive Membership fees. active first.
-    result = dorequest("/api/Subscription/?PartyId={0}&ItemId=notContain:CHAPT&Status=A".format(pid));
+    result = dorequest("/api/Subscription/?PartyId={0}&ItemId=notContain:CHAPT&Status=A&ItemId=ne:DUES_VICS".format(pid));
     if (!result[0]) { mergelog("Error with Fee1: "+ result[1]); return false;}
     else {
       // check number of active results, if 1 or greater, do nothing. else check for inactive. Only need to check if they have inactive yearly, but might as well check both.
@@ -148,7 +149,7 @@ function processMember(item, date) {
         mergelog("Error: Person ({0}) has more than 2 active membership fees (they likely have yearly and monthly active). Please correct immediately before proceeding.".format(pid)); return false;
       } else {
         // has exactly 2 items. Do one last sanity check to make sure they don't have mix and matching memberships.
-        if (subcontains(result[1], "DUES_VICF") && subcontains(result1[1], "DUES_VICFM_GST") ||
+        if (subcontains(result[1], "DUES_VICF") && subcontains(result[1], "DUES_VICFM_GST") ||
             subcontains(result[1], "DUES_VICFM") && subcontains(result[1], "DUES_VICF_GST")
         ) {
           mergelog("Error: mismatching member fees (they have GST from one type, but the base fee is from a different type. Mismatched monthly/yearly). Check this person ({0}) member fees manually please and correct before continuing.".format(pid)); return false;
